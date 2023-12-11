@@ -6,7 +6,6 @@
 #include <iostream>
 #include <unistd.h>
 #include <random>
-#include <omp.h>
 //using namespace std;
 
 const int b_screen = 500;
@@ -22,6 +21,7 @@ struct cell{
 };
 
 const int neighborhood_size=9;
+cell vicinato[neighborhood_size];
 
 //STATES -------
 
@@ -30,17 +30,42 @@ int write_matrix[d][d];  // Write Matrix
 
 //ALLEGRO COLOR -----
 
-//int green; //tree
-//int white; //not burnable
-//int yellow; // burnable
-//int orange; //burning	
-//int black; //burned
-
-int grey; // Not burnable (rock) 
-int green; // burnable (tree)
-int orange; // burning
+int green; //tree
+int white; //not burnable
+int yellow; // burnable
+int orange; //burning	
 int black; //burned
-int white;
+int grey;
+
+//Moore neighbourhood
+void create_neighborhood(int i, int j){
+	vicinato[0].i = i;
+	vicinato[0].j = j;
+
+	vicinato[1].i = i-1;
+	vicinato[1].j = j;
+
+	vicinato[2].i = i;
+	vicinato[2].j = j-1;
+
+	vicinato[3].i = i;
+	vicinato[3].j = j+1;
+
+	vicinato[4].i = i+1;
+	vicinato[4].j = j;
+
+	vicinato[5].i = i-1;
+	vicinato[5].j = j-1;
+
+	vicinato[6].i = i+1;
+	vicinato[6].j = j-1;
+
+	vicinato[7].i = i+1;
+	vicinato[7].j = j+1;
+
+	vicinato[8].i = i-1;
+	vicinato[8].j = j+1;
+}
 
 int getToroidal(int i, int size){
 	if(i < 0){
@@ -53,53 +78,62 @@ int getToroidal(int i, int size){
 	return i;
 }
 
-void transiction_function(std::default_random_engine generator_BurnableToBurning){
-	// std::binomial_distribution<int> distribution_BurnableToBurning(1,0.85); //p =0.3 de passar de burnable a burning
+void transiction_function(){
+	std::default_random_engine generator_BurnableToBurning;
+	// std::binomial_distribution<int> distribution_BurnableToBurning(1,0.95); //p =0.3 de passar de burnable a burning
 
-#pragma omp parallel
-	{
 	int sum;
-	int i, j;		
-	int new_state_BurnableToBurning;	
-	#pragma omp for private(sum,i,j,new_state_BurnableToBurning,generator_BurnableToBurning)
 	for (int y = 0; y < d; ++y) {
-		for (int x = 0; x < d; ++x) {
-			if (read_matrix[y][x] == 0) //(not burnable)
-			{
-				write_matrix[y][x] = 0; // cell remains not burnable
-			}
-			else if (read_matrix[y][x] == 1) //burnable)
-				{
-					sum = 0;
-						for (i = -1; i <= 1; i++){
-						for (j = -1; j <= 1; j++){
+		for (int x = 0; x < d; ++x) {	
+		switch(read_matrix[y][x]){
+			case 0: 
+				write_matrix[y][x] = 0; 
+				break;
+
+		
+			case 1:
+				sum = 0;
+						for (int i = -1; i <= 1; i++){
+						for (int j = -1; j <= 1; j++){
 							if (!(i == 0 && j == 0)){
 								int indexi = getToroidal(y+i,d);
 								int indexj = getToroidal(x+j,d);
-								if (read_matrix[indexi][indexj] == 2)
+								if (read_matrix[indexi][indexj] == 2)//si es detectava que hi ha un burning, sumem 1
 									sum += 1;
 							} 
 						}
-					}				
-			      
-				
-				if(sum>0){ 
-					float p = 0.8;
-					float prob = (-p+1.0)/7.0*sum + (8.0*p-1.0)/7.0;
-					std::binomial_distribution<int> distribution_BurnableToBurning(1,prob);
-					new_state_BurnableToBurning = distribution_BurnableToBurning(generator_BurnableToBurning);
-					write_matrix[y][x] = new_state_BurnableToBurning+1;
 					}
+				// sum = 0;
+				// for (int n = 1; n < neighborhood_size; ++n) {
+				// 	int indexi = getToroidal(vicinato[n].i,d);
+				// 	int indexj = getToroidal(vicinato[n].j,d);
+
+				// 	if (read_matrix[indexi][indexj] == 2) { //si es detectava que hi ha un burning, sumem 1
+				// 		sum += 1; //read_matrix[indexi][indexj];
+				// 	}
+				
+				if(sum>0){ // si s'ha detectat almenys una cel·la veïna burning, tirar número random i comparar amb probabilitat de passar a estat burning
+					//int prob = sum/8;
+					float p = 0.8;
+					// float prob = (-p+1.0)/7.0*sum + (8.0*p-1.0)/7.0;
+					std::binomial_distribution<int> distribution_BurnableToBurning(1,p);
+					int new_state_BurnableToBurning = distribution_BurnableToBurning(generator_BurnableToBurning); //dona 0 o 1
+					write_matrix[y][x] = new_state_BurnableToBurning+1;
+				}
 				else
 					write_matrix[y][x] =1;
-			}
-			else if (read_matrix[y][x] == 2) {
+				break;
+			case 2:
 				write_matrix[y][x] = 3;
-			}		
+				break;
+			case 3:
+				write_matrix[y][x] = 3;
+				break;
 			}
-	}
+		}
 	}
 }
+
 
 void swap(){
 	for (int y = 0; y < d; ++y) {
@@ -109,8 +143,8 @@ void swap(){
 	}
 }
 
-void global_transiction_function(std::default_random_engine generator_BurnableToBurning){
-	transiction_function(generator_BurnableToBurning);
+void global_transiction_function(){
+	transiction_function();
 	swap();
 	step++;
 }
@@ -137,12 +171,12 @@ void initAllegro(){
 	install_mouse();
 	set_gfx_mode(GFX_AUTODETECT_WINDOWED, b_screen, h_screen, 0 ,0 );
 	buffer = create_bitmap(b_screen,h_screen);
-	
+	//red = makecol(255,0,0);
 	green = makecol(50,205,50); // tree (burnable)
-	grey = makecol(192, 192, 192); // rock (not burnable)
+	white = makecol(255,255,255); // rock (not burnable)
 	orange = makecol(255,165,0); // burning
 	black = makecol(0,0,0); //burned
-	white = makecol(255,255,255);
+	grey = makecol(192,192,192);
 }
 
 //DRAW
@@ -175,9 +209,6 @@ void drawwithAllegro(){
 
 int main() {
 	srand(1);
-	std::default_random_engine generator_BurnableToBurning;
-	generator_BurnableToBurning.seed(1);
-	
 	initAllegro();
 	initForest();
 	drawwithAllegro();
@@ -193,7 +224,7 @@ int main() {
 			pressed_p_button=false;
 
 		if(!pressed_p_button)
-			global_transiction_function(generator_BurnableToBurning);
+			global_transiction_function();
 
 		drawwithAllegro();
 	}

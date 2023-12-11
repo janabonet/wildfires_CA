@@ -88,7 +88,10 @@ void transiction_function(){
 				}
 				
 				if(sum>0){ // si s'ha detectat almenys una cel·la veïna burning, tirar número random i comparar amb probabilitat de passar a estat burning
+					float p = 0.6;
+					float prob = (-p+1.0)/7.0*sum + (8.0*p -1.0)/7.0;
 					int new_state_BurnableToBurning = distribution_BurnableToBurning(generator_BurnableToBurning); //dona 0 o 1
+				
 					
 					write_matrix[y][x] = new_state_BurnableToBurning+1;
 					// PER FER: calcular la probabilitat de passar a burning en funció del número de veïnes burning (més probable de passar 

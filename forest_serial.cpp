@@ -80,7 +80,7 @@ int getToroidal(int i, int size){
 
 void transiction_function(){
 	std::default_random_engine generator_BurnableToBurning;
-	std::binomial_distribution<int> distribution_BurnableToBurning(1,0.95); //p =0.3 de passar de burnable a burning
+	// std::binomial_distribution<int> distribution_BurnableToBurning(1,0.95); //p =0.3 de passar de burnable a burning
 
 	int sum;
 	for (int y = 0; y < d; ++y) {
@@ -200,6 +200,7 @@ void drawwithAllegro(){
 
 
 int main() {
+	srand(1);
 	initAllegro();
 	initForest();
 	drawwithAllegro();
