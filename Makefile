@@ -30,7 +30,7 @@ run_serial:
 	LD_LIBRARY_PATH=./libraries/allegro/lib ./$(EXEC_SERIAL)
 
 run_omp:
-	LD_LIBRARY_PATH=./libraries/allegro/lib OMP_NUM_THREADS=8OMP_NUM_THREADS=8 ./$(EXEC_OMP)
+	LD_LIBRARY_PATH=./libraries/allegro/lib OMP_NUM_THREADS=8 ./$(EXEC_OMP)
 
 run_cuda:
 	LD_LIBRARY_PATH=./libraries/allegro/lib ./$(EXEC_CUDA)
