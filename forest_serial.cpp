@@ -81,20 +81,17 @@ int getToroidal(int i, int size){
 void transiction_function(){
 	std::default_random_engine generator_BurnableToBurning;
 	std::binomial_distribution<int> distribution_BurnableToBurning(1,0.95); //p =0.3 de passar de burnable a burning
-
+	int sum;
 	for (int y = 0; y < d; ++y) {
-		for (int x = 0; x < d; ++x) {
-// casos: cada cel·la pot ser burnable (green) o not burnable(white), depen d'una probabilitat --> assignar quan es crea la graella inicial
-// 1r cas: burnable --> es mira si té algun veí burning i, en aquest cas, es compara probabilitat de (burnable-->burning) amb un rand
-//2n cas: not burnable --> es reescriu igual a la matriu del següent pas de temps (no cal mirar neighbourhood)
-			if (read_matrix[y][x] == 0) //(not burnable)
-			{
-				write_matrix[y][x] = 0; // cell remains not burnable
-			}
-			else if (read_matrix[y][x] == 1) //burnable)
-			{
+		for (int x = 0; x < d; ++x) {	
+		switch(read_matrix[y][x]){
+			case 0: 
+				write_matrix[y][x] = 0; 
+				break;
+
+			case 1:
 				create_neighborhood(y,x); //agafem les veïnes de la cel·la observadda
-				int sum = 0;
+				sum = 0;
 				for (int n = 1; n < neighborhood_size; ++n) {
 					int indexi = getToroidal(vicinato[n].i,d);
 					int indexj = getToroidal(vicinato[n].j,d);
@@ -109,15 +106,20 @@ void transiction_function(){
 					
 					write_matrix[y][x] = new_state_BurnableToBurning+1;
 					// PER FER: calcular la probabilitat de passar a burning en funció del número de veïnes burning (més probable de passar 
-					// a burning si hi ha més veïnes cremant)
+					// a burning si hi ha més veïnes cremant) i implementar vent
 				}
 				else
 					write_matrix[y][x] =1;
-			}
-			else if (read_matrix[y][x] == 2) { //burning
+				break;
+			case 2:
 				write_matrix[y][x] = 3;
-			}		
+				break;
+
+			case 3:
+				write_matrix[y][x] = 3;
+				break;
 			}
+		}
 	}
 }
 
