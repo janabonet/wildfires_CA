@@ -81,6 +81,7 @@ int getToroidal(int i, int size){
 void transiction_function(){
 	std::default_random_engine generator_BurnableToBurning;
 	std::binomial_distribution<int> distribution_BurnableToBurning(1,0.95); //p =0.3 de passar de burnable a burning
+
 	int sum;
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {	
@@ -102,8 +103,11 @@ void transiction_function(){
 				}
 				
 				if(sum>0){ // si s'ha detectat almenys una cel·la veïna burning, tirar número random i comparar amb probabilitat de passar a estat burning
+					//int prob = sum/8;
+					float p = 0.8;
+					float prob = (-p+1.0)/7.0*sum + (8.0*p-1.0)/7.0;
+					std::binomial_distribution<int> distribution_BurnableToBurning(1,prob);
 					int new_state_BurnableToBurning = distribution_BurnableToBurning(generator_BurnableToBurning); //dona 0 o 1
-					
 					write_matrix[y][x] = new_state_BurnableToBurning+1;
 					// PER FER: calcular la probabilitat de passar a burning en funció del número de veïnes burning (més probable de passar 
 					// a burning si hi ha més veïnes cremant) i implementar vent
