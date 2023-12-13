@@ -1,9 +1,5 @@
 #include <allegro.h>
-//#include <conio.h>
 #include <stdlib.h>
-#include <math.h>
-#include <stdio.h>
-#include <iostream>
 #include <unistd.h>
 #include <random>
 #include <omp.h>
