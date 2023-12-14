@@ -81,10 +81,27 @@ int getToroidal(int i, int size){
 void transiction_function(){
 	std::default_random_engine generator_BurnableToBurning;
 	std::binomial_distribution<int> distribution_BurnableToBurning(1,0.95); //p =0.3 de passar de burnable a burning
-
-	int sum,vent,indexi,indexj;
+    int vent = 2;
+	int sum,indexi,indexj;
+    int indexi1,indexj1,indexi2,indexj2,indexi3,indexj3,indexi4,indexj4,indexi5,indexj5,indexi6,indexj6,indexi7,indexj7,indexi8,indexj8;
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {	
+            // indexi1 = getToroidal(vicinato[1].i,d);
+            // indexj1 = getToroidal(vicinato[1].j,d);
+            // indexi2 = getToroidal(vicinato[2].i,d);
+            // indexj2 = getToroidal(vicinato[2].j,d);
+            // indexi3 = getToroidal(vicinato[3].i,d);
+            // indexj3 = getToroidal(vicinato[3].j,d);
+            // indexi4 = getToroidal(vicinato[4].i,d);
+            // indexj4 = getToroidal(vicinato[4].j,d);
+            // indexi5 = getToroidal(vicinato[5].i,d);
+            // indexj5 = getToroidal(vicinato[5].j,d);
+            // indexi6 = getToroidal(vicinato[6].i,d);
+            // indexj6 = getToroidal(vicinato[6].j,d);
+            // indexi7 = getToroidal(vicinato[7].i,d);
+            // indexj7 = getToroidal(vicinato[7].j,d);
+            // indexi8 = getToroidal(vicinato[8].i,d);
+            // indexj8 = getToroidal(vicinato[8].j,d);
 		switch(read_matrix[y][x]){
 			case 0: 
 				write_matrix[y][x] = 0; 
@@ -93,16 +110,30 @@ void transiction_function(){
 			case 1: // burnable
 				create_neighborhood(y,x); //agafem les veïnes de la cel·la observadda
                 switch(vent) {
-                    case 0: //no vent
-                        sum = 0;
-                        for (int n = 1; n < neighborhood_size; ++n) {
-                            indexi = getToroidal(vicinato[n].i,d);
-                            indexj = getToroidal(vicinato[n].j,d);
+                    
 
-                            if (read_matrix[indexi][indexj] == 2) { //si es detectava que hi ha un burning, sumem 1
-                                sum += 1; //read_matrix[indexi][indexj];
-                            }
-                        }
+                    case 0: //no vent
+
+                        // sum = 0;
+                        // for (int n = 1; n < neighborhood_size; ++n) {
+                        //     indexi = getToroidal(vicinato[n].i,d);
+                        //     indexj = getToroidal(vicinato[n].j,d);
+
+                        //     if (read_matrix[indexi][indexj] == 2) { //si es detectava que hi ha un burning, sumem 1
+                        //         sum += 1; //read_matrix[indexi][indexj];
+                        //     }
+                        // }
+                        sum = 0;
+						for (int i = -1; i <= 1; i++){
+						for (int j = -1; j <= 1; j++){
+							if (!(i == 0 && j == 0)){
+								indexi = getToroidal(y+i,d);
+								indexj = getToroidal(x+j,d);
+								if (read_matrix[indexi][indexj] == 2)//si es detectava que hi ha un burning, sumem 1
+									sum += 1;
+							} 
+						}
+					    }
                         
                         if(sum>0){ 
                             float p = 0.8;
@@ -115,7 +146,7 @@ void transiction_function(){
                             write_matrix[y][x] =1;
                     break;
 
-                    case 1: //oest --> només miro si la de la dreta està cremant
+                    case 1: //N 
                         sum = 0;
                         indexi = getToroidal(vicinato[3].i,d);
                         indexj = getToroidal(vicinato[3].j,d);
@@ -129,9 +160,38 @@ void transiction_function(){
                         }
                         else
                             write_matrix[y][x] =1;
+
+
+                        // sum = 8;
+
+                        // if (read_matrix[indexi3][indexj3] == 2) {
+                            
+                        //     float prob = 1.0;
+                        //     std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                        //     int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                        //     write_matrix[y][x] = new_state_BurnableToBurning+1;
+
+                        // }
+
+                        // else if ((read_matrix[indexi3][indexj3] == 2 && read_matrix[indexi7][indexj7] == 2)||((read_matrix[indexi3][indexj3] == 2 && read_matrix[indexi8][indexj8] == 2))) {
+                        //     float prob = 1.0;
+                        //     std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                        //     int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                        //     write_matrix[y][x] = new_state_BurnableToBurning+1;
+                        // }
+                        // else if (read_matrix[indexi3][indexj3] == 2 && read_matrix[indexi7][indexj7] == 2 && read_matrix[indexi8][indexj8]) {
+                        //     printf("hola");
+                        //     float prob = 1.0;
+                        //     std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                        //     int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                        //     write_matrix[y][x] = new_state_BurnableToBurning+1;
+                        // }
+                        // else
+                        //     write_matrix[y][x] =1;
+
                     break;
 
-                    case 2: // est
+                    case 2: // S
                         sum = 0;
                         indexi = getToroidal(vicinato[2].i,d);
                         indexj = getToroidal(vicinato[2].j,d);
@@ -147,7 +207,7 @@ void transiction_function(){
                             write_matrix[y][x] =1;
                     break;
 
-                    case 3: // nord
+                    case 3: // O
                         sum = 0;
                         indexi = getToroidal(vicinato[4].i,d);
                         indexj = getToroidal(vicinato[4].j,d);
@@ -163,7 +223,7 @@ void transiction_function(){
                             write_matrix[y][x] =1;
                     break;
 
-                    case 4: // sud
+                    case 4: // E
                         sum = 0;
                         indexi = getToroidal(vicinato[1].i,d);
                         indexj = getToroidal(vicinato[1].j,d);
@@ -179,7 +239,7 @@ void transiction_function(){
                             write_matrix[y][x] =1;
                     break;
 
-                    case 5: // NE
+                    case 5: // SO
                         sum = 0;
                         indexi = getToroidal(vicinato[6].i,d);
                         indexj = getToroidal(vicinato[6].j,d);
@@ -211,7 +271,7 @@ void transiction_function(){
                             write_matrix[y][x] =1;
                     break;
 
-                    case 7: //SE
+                    case 7: //SE 
                         sum = 0;
                         indexi = getToroidal(vicinato[5].i,d);
                         indexj = getToroidal(vicinato[5].j,d);
@@ -227,7 +287,7 @@ void transiction_function(){
                             write_matrix[y][x] =1;
                     break;
                     
-                    case 8: //SO
+                    case 8: //NE
                         sum = 0;
                         indexi = getToroidal(vicinato[8].i,d);
                         indexj = getToroidal(vicinato[8].j,d);
@@ -268,7 +328,7 @@ void swap(){
 }
 
 void global_transiction_function(){
-    int vent = 3;
+    // int vent = 0;
 	transiction_function();
 	swap();
 	step++;
@@ -279,14 +339,57 @@ void initForest()
 // This function generates the forest (grid) and assigns each cell one of the two possible states: rock (not burnable) or tree (burnable)
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {
-			int state = rand()%2; 
-			read_matrix[y][x]=state;
-			write_matrix[y][x]=state;
+			//int state = rand()%2; 
+			read_matrix[y][x]=1;
+			write_matrix[y][x]=1;
 		}
 	}
 // introduce a burning cell
 	read_matrix[250][250] = 2;
 	write_matrix[250][250] = 2;
+
+    read_matrix[251][251] = 2;
+	write_matrix[251][251] = 2;
+
+    read_matrix[251][249] = 2;
+	write_matrix[251][249] = 2;
+
+    read_matrix[249][249] = 2;
+	write_matrix[249][249] = 2;
+
+    read_matrix[249][251] = 2;
+	write_matrix[249][251] = 2;
+
+    read_matrix[249][250] = 2;
+	write_matrix[249][250] = 2;
+
+    read_matrix[250][251] = 2;
+	write_matrix[250][251] = 2;
+
+    read_matrix[250][249] = 2;
+	write_matrix[250][249] = 2;
+
+    read_matrix[250][251] = 2;
+	write_matrix[249][251] = 2;
+
+    // altres
+
+    read_matrix[250][252] = 2;
+	write_matrix[250][252] = 2;
+
+    read_matrix[250][253] = 2;
+	write_matrix[250][253] = 2;
+
+    read_matrix[250][248] = 2;
+	write_matrix[250][248] = 2;
+
+    read_matrix[250][247] = 2;
+	write_matrix[250][247] = 2;
+
+    read_matrix[250][254] = 2;
+	write_matrix[250][254] = 2;
+
+
 }
 
 // INIT ALLEGRO
@@ -338,6 +441,7 @@ int main() {
 	drawwithAllegro();
 	bool pressed_p_button=false;
 	int microsec = 100000;
+    // int vent = 0;
 
 	while(!key[KEY_ESC]){
 		
