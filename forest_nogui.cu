@@ -5,6 +5,10 @@
 #include <cuda.h>
 //using namespace std;
 
+//maybe
+#include <iostream>
+#include <stdio.h>
+
 // I/O parameters used to index argv[]
 #define STEPS_ID 1
 #define BLOCK_SIZE_X 2
@@ -13,16 +17,11 @@
 
 
 // Macros linearizing buffer 2D indices
-#define SET(M,columns,i,j,value) (M[(i)*columns) + j] = value)
+#define SET(M,columns,i,j,value) (M[(i)*columns + j] = value)
 #define GET(M,columns,i,j) (M[i*columns + j])
 #define BUF_SET(M,rows,columns,n,i,j,value) ( M[n*rows*columns + i*columns + j])
 #define BUF_GET(M,rows,columns, n,i,j) ( M[n*rows*columns + i*columns + j])
 
-
-struct cell{
-	int i;
-	int j;
-};
 
 // Kernel for periodic boundary conditions
 int getToroidal(int i, int size){
@@ -38,7 +37,7 @@ int getToroidal(int i, int size){
 
 
 // TODO: Passar funcio a CUDA
-__global__ void transiction_function(std::default_random_engine generator_binomial, int d, int *read_matrix, int *write_matrix){
+__global__ void transition_function(std::default_random_engine generator_binomial, int d, int *read_matrix, int *write_matrix){
 	int x = (blockDim.x*blockIdx.x + threadIdx.x) + 1;
 	int y = (blockDim.y*blockIdx.y + threadIdx.y) + 1;
 
@@ -87,7 +86,7 @@ __global__ void transiction_function(std::default_random_engine generator_binomi
 __global__ void swap(int d, int *read_matrix, int *write_matrix){
 	int x = (blockDim.x*blockIdx.x + threadIdx.x) + 1;
 	int y = (blockDim.y*blockIdx.y + threadIdx.y) + 1;
-	if (x < d && y < d)
+	if (x < d && y < d){
 		read_matrix[y*d+x] = write_matrix[y*d+x];
 	}
 }
@@ -116,14 +115,17 @@ int main(int argc, char **argv) {
 	generator_binomial.seed(1);
 
 	// Allocate CPU memory
-	int d = 500;	
+	const int d = 500;	
+	int size = d * d * sizeof(int);
 	
-	int *write_matrix[d][d];
-	int *read_matrix[d][d]; 
-	read_matrix = new int[d][d];
-	write_matrix = new int[d][d];
+	int *read_matrix; 
+	int *write_matrix;
+	//read_matrix = new int[d][d];
+	//write_matrix = new int[d][d];
+	read_matrix = (int *)malloc(size);
+	write_matrix = (int *)malloc(size);
 
-	
+
 	int total_steps = atoi(argv[STEPS_ID]);
 	
 	// Block size and number of blocks
@@ -132,11 +134,11 @@ int main(int argc, char **argv) {
 	bs_y = atoi(argv[BLOCK_SIZE_Y]);
 
 	dim3 block_size(bs_x, bs_y, 1);
-	dim3 number_of_blocks(ceil((d-1)/(float)block_size.x), ceil((d-1)/(float)block_size.y),1);
+	dim3 block_number(ceil((d-1)/(float)block_size.x), ceil((d-1)/(float)block_size.y),1);
 	
-	printf("Files: %d, columnes: %d\n",dim,dim);
+	printf("Files: %d, columnes: %d\n",d,d);
 	printf("blocksize_x: %d, blocksize_y: %d\n",bs_x, bs_y);
-	printf("Number of blocks (x): %d, Number of blocks (y): %d",number_of_blocks.x, number_of_blocks.y);
+	printf("Number of blocks (x): %d, Number of blocks (y): %d",block_number.x, block_number.y);
 	
 
 	// Fill read_matrix with initial conditions	
@@ -145,7 +147,6 @@ int main(int argc, char **argv) {
 	// Allocate memory in GPU and copy data  
 	int *d_read_matrix, *d_write_matrix;
 	
-	int size = d*d*sizeof(int);
 	cudaMalloc((void**) &d_read_matrix, size);
 	cudaMalloc((void**) &d_write_matrix, size);
 
@@ -159,20 +160,20 @@ int main(int argc, char **argv) {
 			// Check for CUDA errors
 			cudaError_t err = cudaGetLastError();
 			if (err != cudaSuccess){
-				printf("CUDA Error: %s\n",cudaErrorString(err));
+				printf("CUDA Error: %s\n",cudaGetErrorString(err));
 			}
 			
 		swap<<<block_number, block_size>>>(d, d_read_matrix, d_write_matrix);	
 		// Check for CUDA errors
-		cudaError_t err = cudaGetLastError();
+		err = cudaGetLastError();
 		if (err != cudaSuccess){
-			printf("CUDA Error: %s\n",cudaErrorString(err));
+			printf("CUDA Error: %s\n",cudaGetErrorString(err));
 		}
 	}
 
 	// Copy data from GPU to CPU
-	cudaMemcpy(read_matrix, d_read_matrix, cudaMemcpyDeviceToHost);
-	cudaMemcpy(write_matrix, d_write_matrix, cudaMemcpyDeviceToHost);
+	cudaMemcpy(read_matrix, d_read_matrix, size, cudaMemcpyDeviceToHost);
+	cudaMemcpy(write_matrix, d_write_matrix, size, cudaMemcpyDeviceToHost);
 
 	
 	printf("Releasing memory...\n");
