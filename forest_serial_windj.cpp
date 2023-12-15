@@ -8,9 +8,9 @@
 #include <random>
 //using namespace std;
 
-const int b_screen = 500;
-const int h_screen = 500;
-const int d = 500;
+const int b_screen = 1000;
+const int h_screen = 1000;
+const int d = 1000;
 int zoom=1;
 BITMAP* buffer;
 int step = 0;
@@ -80,53 +80,392 @@ int getToroidal(int i, int size){
 
 void transiction_function(){
 	std::default_random_engine generator_BurnableToBurning;
-	// std::binomial_distribution<int> distribution_BurnableToBurning(1,0.95); //p =0.3 de passar de burnable a burning
-
-	int sum;
+	std::binomial_distribution<int> distribution_BurnableToBurning(1,0.95); //p =0.3 de passar de burnable a burning
+    int vent = 7;
+	int sum,indexi,indexj;
+    int indexi_left,indexj_left,indexi_right,indexj_right,indexi_middle,indexj_middle;
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {	
-		switch(read_matrix[y][x]){
-			case 0: 
-				write_matrix[y][x] = 0; 
-				break;
+            switch(read_matrix[y][x]){
+                case 0: 
+                    write_matrix[y][x] = 0; 
+                    break;
+                case 1: // burnable
+                    create_neighborhood(y,x); //agafem les veïnes de la cel·la observadda
+                    switch(vent) {
+                        case 0: //no vent
+                            sum = 0;
+                            for (int i = -1; i <= 1; i++){
+                            for (int j = -1; j <= 1; j++){
+                                if (!(i == 0 && j == 0)){
+                                    indexi = getToroidal(y+i,d);
+                                    indexj = getToroidal(x+j,d);
+                                    if (read_matrix[indexi][indexj] == 2)//si es detectava que hi ha un burning, sumem 1
+                                        sum += 1;
+                                } 
+                            }
+                            }
+                            
+                            if(sum>0){ 
+                                float p = 0.8;
+                                float prob = (-p+1.0)/7.0*sum + (8.0*p-1.0)/7.0;
+                                std::binomial_distribution<int> distribution_BurnableToBurning(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurning(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+                            else
+                                write_matrix[y][x] =1;
+                        break;
 
-		
-			case 1:
-				sum = 0;
-						for (int i = -1; i <= 1; i++){
-						for (int j = -1; j <= 1; j++){
-							if (!(i == 0 && j == 0)){
-								int indexi = getToroidal(y+i,d);
-								int indexj = getToroidal(x+j,d);
-								if (read_matrix[indexi][indexj] == 2)//si es detectava que hi ha un burning, sumem 1
-									sum += 1;
-							} 
-						}
-					}
+                        case 1: //N 
+                            indexi_middle = getToroidal(vicinato[3].i,d);
+                            indexj_middle = getToroidal(vicinato[3].j,d);
+                            indexi_right = getToroidal(vicinato[7].i,d);
+                            indexj_right = getToroidal(vicinato[7].j,d);
+                            indexi_left = getToroidal(vicinato[8].i,d);
+                            indexj_left = getToroidal(vicinato[8].j,d);
 
-				
-				if(sum>0){ // si s'ha detectat almenys una cel·la veïna burning, tirar número random i comparar amb probabilitat de passar a estat burning
-					//int prob = sum/8;
-					float p = 0.8;
-					// float prob = (-p+1.0)/7.0*sum + (8.0*p-1.0)/7.0;
-					std::binomial_distribution<int> distribution_BurnableToBurning(1,p);
-					int new_state_BurnableToBurning = distribution_BurnableToBurning(generator_BurnableToBurning); //dona 0 o 1
-					write_matrix[y][x] = new_state_BurnableToBurning+1;
-				}
-				else
-					write_matrix[y][x] =1;
-				break;
-			case 2:
-				write_matrix[y][x] = 3;
-				break;
-			case 3:
-				write_matrix[y][x] = 3;
-				break;
-			}
+                            sum = 8;
+
+                            if (read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_right][indexj_right] == 2 && read_matrix[indexi_left][indexj_left]) {
+                                float prob = 1.0;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+
+                            else if ((read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_right][indexj_right] == 2)||((read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_left][indexj_left] == 2))) {
+                                float prob = 0.9;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }                    
+                            
+                            else if (read_matrix[indexi_middle][indexj_middle] == 2) {
+                                float prob = 0.7;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+
+                            else if ((read_matrix[indexi_left][indexj_left] == 2) ||(read_matrix[indexi_right][indexj_right] == 2)) {
+                                float prob = 0.65;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+                                 
+                            else
+                                write_matrix[y][x] =1;
+
+                        break;
+
+                        case 2: // S
+                            indexi_middle = getToroidal(vicinato[2].i,d);
+                            indexj_middle = getToroidal(vicinato[2].j,d);
+                            indexi_right = getToroidal(vicinato[6].i,d);
+                            indexj_right = getToroidal(vicinato[6].j,d);
+                            indexi_left = getToroidal(vicinato[5].i,d);
+                            indexj_left = getToroidal(vicinato[5].j,d);
+
+                            sum = 8;
+
+                            if (read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_right][indexj_right] == 2 && read_matrix[indexi_left][indexj_left]) {
+                                float prob = 1.0;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+
+                            else if ((read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_right][indexj_right] == 2)||((read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_left][indexj_left] == 2))) {
+                                float prob = 0.9;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }                    
+                            
+                            else if (read_matrix[indexi_middle][indexj_middle] == 2) {
+                                float prob = 0.7;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+
+                            else if ((read_matrix[indexi_left][indexj_left] == 2)||(read_matrix[indexi_right][indexj_right] == 2)) {
+                                float prob = 0.65;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+                                 
+                            else
+                                write_matrix[y][x] =1;
+                        break;
+
+                        case 3: // O
+                            indexi_middle = getToroidal(vicinato[4].i,d);
+                            indexj_middle = getToroidal(vicinato[4].j,d);
+                            indexi_right = getToroidal(vicinato[6].i,d);
+                            indexj_right = getToroidal(vicinato[6].j,d);
+                            indexi_left = getToroidal(vicinato[7].i,d);
+                            indexj_left = getToroidal(vicinato[7].j,d);
+
+                            sum = 8;
+
+                            if (read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_right][indexj_right] == 2 && read_matrix[indexi_left][indexj_left]) {
+                                float prob = 1.0;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+
+                            else if ((read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_right][indexj_right] == 2)||((read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_left][indexj_left] == 2))) {
+                                float prob = 0.9;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }                    
+                            
+                            else if (read_matrix[indexi_middle][indexj_middle] == 2) {
+                                float prob = 0.7;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+
+                            else if ((read_matrix[indexi_left][indexj_left] == 2)||(read_matrix[indexi_right][indexj_right] == 2)) {
+                                float prob = 0.65;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+                                 
+                            else
+                                write_matrix[y][x] =1;
+                        break;
+
+                        case 4: // E
+                            indexi_middle = getToroidal(vicinato[1].i,d);
+                            indexj_middle = getToroidal(vicinato[1].j,d);
+                            indexi_right = getToroidal(vicinato[8].i,d);
+                            indexj_right = getToroidal(vicinato[8].j,d);
+                            indexi_left = getToroidal(vicinato[5].i,d);
+                            indexj_left = getToroidal(vicinato[5].j,d);
+
+                            sum = 8;
+
+                            if (read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_right][indexj_right] == 2 && read_matrix[indexi_left][indexj_left]) {
+                                float prob = 1.0;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+
+                            else if ((read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_right][indexj_right] == 2)||((read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_left][indexj_left] == 2))) {
+                                float prob = 0.9;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }                    
+                            
+                            else if (read_matrix[indexi_middle][indexj_middle] == 2) {
+                                float prob = 0.7;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+
+                            else if ((read_matrix[indexi_left][indexj_left] == 2)||(read_matrix[indexi_right][indexj_right] == 2)) {
+                                float prob = 0.65;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+                                 
+                            else
+                                write_matrix[y][x] =1;
+                        break;
+
+                        case 5: // SO
+                            indexi_middle = getToroidal(vicinato[6].i,d);
+                            indexj_middle = getToroidal(vicinato[6].j,d);
+                            indexi_right = getToroidal(vicinato[2].i,d);
+                            indexj_right = getToroidal(vicinato[2].j,d);
+                            indexi_left = getToroidal(vicinato[4].i,d);
+                            indexj_left = getToroidal(vicinato[4].j,d);
+
+                            sum = 8;
+
+                            if (read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_right][indexj_right] == 2 && read_matrix[indexi_left][indexj_left]) {
+                                float prob = 1.0;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+
+                            else if ((read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_right][indexj_right] == 2)||((read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_left][indexj_left] == 2))) {
+                                float prob = 0.9;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }                    
+                            
+                            else if (read_matrix[indexi_middle][indexj_middle] == 2) {
+                                float prob = 0.7;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+
+                            else if ((read_matrix[indexi_left][indexj_left] == 2)||(read_matrix[indexi_right][indexj_right] == 2)) {
+                                float prob = 0.65;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+                                 
+                            else
+                                write_matrix[y][x] =1;
+                        break;
+
+                        case 6: //NO
+                            indexi_middle = getToroidal(vicinato[7].i,d);
+                            indexj_middle = getToroidal(vicinato[7].j,d);
+                            indexi_right = getToroidal(vicinato[4].i,d);
+                            indexj_right = getToroidal(vicinato[4].j,d);
+                            indexi_left = getToroidal(vicinato[3].i,d);
+                            indexj_left = getToroidal(vicinato[3].j,d);
+
+                            sum = 8;
+
+                            if (read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_right][indexj_right] == 2 && read_matrix[indexi_left][indexj_left]) {
+                                float prob = 1.0;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+
+                            else if ((read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_right][indexj_right] == 2)||((read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_left][indexj_left] == 2))) {
+                                float prob = 0.9;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }                    
+                            
+                            else if (read_matrix[indexi_middle][indexj_middle] == 2) {
+                                float prob = 0.7;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+
+                            else if ((read_matrix[indexi_left][indexj_left] == 2)||(read_matrix[indexi_right][indexj_right] == 2)) {
+                                float prob = 0.65;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+                                 
+                            else
+                                write_matrix[y][x] =1;
+                        break;
+
+                        case 7: //SE 
+                            indexi_middle = getToroidal(vicinato[5].i,d);
+                            indexj_middle = getToroidal(vicinato[5].j,d);
+                            indexi_right = getToroidal(vicinato[1].i,d);
+                            indexj_right = getToroidal(vicinato[1].j,d);
+                            indexi_left = getToroidal(vicinato[2].i,d);
+                            indexj_left = getToroidal(vicinato[2].j,d);
+
+                            sum = 8;
+
+                            if (read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_right][indexj_right] == 2 && read_matrix[indexi_left][indexj_left]) {
+                                float prob = 1.0;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+
+                            else if ((read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_right][indexj_right] == 2)||((read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_left][indexj_left] == 2))) {
+                                float prob = 0.9;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }                    
+                            
+                            else if (read_matrix[indexi_middle][indexj_middle] == 2) {
+                                float prob = 0.7;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+
+                            else if ((read_matrix[indexi_left][indexj_left] == 2)||(read_matrix[indexi_right][indexj_right] == 2)) {
+                                float prob = 0.65;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+                                 
+                            else
+                                write_matrix[y][x] =1;
+                        break;
+                        
+                        case 8: //NE
+                            indexi_middle = getToroidal(vicinato[8].i,d);
+                            indexj_middle = getToroidal(vicinato[8].j,d);
+                            indexi_right = getToroidal(vicinato[3].i,d);
+                            indexj_right = getToroidal(vicinato[3].j,d);
+                            indexi_left = getToroidal(vicinato[1].i,d);
+                            indexj_left = getToroidal(vicinato[1].j,d);
+
+                            sum = 8;
+
+                            if (read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_right][indexj_right] == 2 && read_matrix[indexi_left][indexj_left]) {
+                                float prob = 1.0;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+
+                            else if ((read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_right][indexj_right] == 2)||((read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_left][indexj_left] == 2))) {
+                                float prob = 0.9;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }                    
+                            
+                            else if (read_matrix[indexi_middle][indexj_middle] == 2) {
+                                float prob = 0.7;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+
+                            else if ((read_matrix[indexi_left][indexj_left] == 2)||(read_matrix[indexi_right][indexj_right] == 2)) {
+                                float prob = 0.65;
+                                std::binomial_distribution<int> distribution_BurnableToBurningN(1,prob);
+                                int new_state_BurnableToBurning = distribution_BurnableToBurningN(generator_BurnableToBurning); //dona 0 o 1
+                                write_matrix[y][x] = new_state_BurnableToBurning+1;
+                            }
+                                 
+                            else
+                                write_matrix[y][x] =1;
+                        break;
+                    }
+                    break;
+                case 2:
+                    write_matrix[y][x] = 3;
+                    break;
+
+                case 3:
+                    write_matrix[y][x] = 3;
+                    break;
+            }
 		}
 	}
 }
-
 
 void swap(){
 	for (int y = 0; y < d; ++y) {
@@ -137,6 +476,7 @@ void swap(){
 }
 
 void global_transiction_function(){
+    // int vent = 0;
 	transiction_function();
 	swap();
 	step++;
@@ -144,17 +484,68 @@ void global_transiction_function(){
 
 void initForest()
 {
+    std::default_random_engine generator_treerock;
+	std::binomial_distribution<int> distribution_treerock(1,0.95); 
+    
 // This function generates the forest (grid) and assigns each cell one of the two possible states: rock (not burnable) or tree (burnable)
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {
-			int state = rand()%2; 
-			read_matrix[y][x]=state;
+            std::binomial_distribution<int> distribution_treerock(1,0.95);
+            int state = distribution_treerock(generator_treerock); //dona 0 o 1
+			// int state = rand()%2; 
+            read_matrix[y][x]=state;
 			write_matrix[y][x]=state;
+            
+			// read_matrix[y][x]=1;
+			// write_matrix[y][x]=1;
 		}
 	}
 // introduce a burning cell
 	read_matrix[250][250] = 2;
 	write_matrix[250][250] = 2;
+
+    read_matrix[251][251] = 2;
+	write_matrix[251][251] = 2;
+
+    read_matrix[251][249] = 2;
+	write_matrix[251][249] = 2;
+
+    read_matrix[249][249] = 2;
+	write_matrix[249][249] = 2;
+
+    read_matrix[249][251] = 2;
+	write_matrix[249][251] = 2;
+
+    read_matrix[249][250] = 2;
+	write_matrix[249][250] = 2;
+
+    read_matrix[250][251] = 2;
+	write_matrix[250][251] = 2;
+
+    read_matrix[250][249] = 2;
+	write_matrix[250][249] = 2;
+
+    read_matrix[250][251] = 2;
+	write_matrix[249][251] = 2;
+
+    // altres
+
+    read_matrix[250][252] = 2;
+	write_matrix[250][252] = 2;
+
+    read_matrix[250][253] = 2;
+	write_matrix[250][253] = 2;
+
+    read_matrix[250][248] = 2;
+	write_matrix[250][248] = 2;
+
+    read_matrix[250][247] = 2;
+	write_matrix[250][247] = 2;
+
+    read_matrix[250][254] = 2;
+	write_matrix[250][254] = 2;
+
+
 }
 
 // INIT ALLEGRO
@@ -201,7 +592,6 @@ void drawwithAllegro(){
 
 
 int main() {
-	srand(1);
 	initAllegro();
 	initForest();
 	drawwithAllegro();
