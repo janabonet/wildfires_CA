@@ -10,21 +10,39 @@
 #include <stdio.h>
 
 // I/O parameters used to index argv[]
-#define STEPS_ID 1
-#define BLOCK_SIZE_X 2
-#define BLOCK_SIZE_Y 3
-#define OUTPUT_PATH_ID 4 
+#define STEPS_ID		1
+#define BLOCK_SIZE_X	2
+#define BLOCK_SIZE_Y	3
+#define MATRIX_SIZE		4
+#define OUTPUT_PATH_ID	5 
+#define STRLEN			256
 
 
-// Macros linearizing buffer 2D indices
-#define SET(M,columns,i,j,value) (M[(i)*columns + j] = value)
-#define GET(M,columns,i,j) (M[i*columns + j])
-#define BUF_SET(M,rows,columns,n,i,j,value) ( M[n*rows*columns + i*columns + j])
-#define BUF_GET(M,rows,columns, n,i,j) ( M[n*rows*columns + i*columns + j])
+// Function to save the last iteration matrix
+
+bool saveGrid2Dr(int *M, int d, char *path){
+	FILE *f;
+	f = fopen(path,"w");
+
+	if (!f)
+		return false;
+
+	char str[STRLEN];
+	for (int i = 0; i < d; i++){
+		for (int j = 0; j < d; j++){
+			sprintf(str,"%d ",M[i*d+j]);
+			fprintf(f,"%s ", str);
+		}
+		fprintf(f,"\n");
+	}
+	fclose(f);
+
+	return true;
+}
 
 
 // Kernel for periodic boundary conditions
-int getToroidal(int i, int size){
+__device__ int getToroidal(int i, int size){
 	if(i < 0){
 		return i+size;
 	}else{
@@ -36,17 +54,17 @@ int getToroidal(int i, int size){
 }
 
 
-// TODO: Passar funcio a CUDA
-__global__ void transition_function(std::default_random_engine generator_binomial, int d, int *read_matrix, int *write_matrix){
+// TODO: Arreglar generador random
+__global__ void transition_function(int d, int *read_matrix, int *write_matrix){
 	int x = (blockDim.x*blockIdx.x + threadIdx.x) + 1;
 	int y = (blockDim.y*blockIdx.y + threadIdx.y) + 1;
 
 	int sum;
 
 	if (x < d && y < d){	
-		switch(read_matrix[y*d+x]){ // or read_matrix[(n*r*c + i*c) + j]? 
+		switch(read_matrix[y*d+x]){ 
 			case 0: 
-				write_matrix[y*d+x] = 0; // or write_matrix[(n*r*c + i*c) + j]
+				write_matrix[y*d+x] = 0; 
 				break;
 			
 			case 1:
@@ -56,18 +74,19 @@ __global__ void transition_function(std::default_random_engine generator_binomia
 						if (!(i == 0 && j == 0)){
 							int indexi = getToroidal(y+i,d);
 							int indexj = getToroidal(x+j,d);
-							if (read_matrix[indexi*d+indexj] == 2) //(read_matrix[indexi][indexj] == 2)
+							if (read_matrix[indexi*d+indexj] == 2) 
 								sum += 1;
 						}
 					}
 				}
 
 				if (sum > 0){
-					float p = 0.8;
-					float prob = (-p+1.0)/7.0*sum + (8.0*p-1.0)/7.0;
-					std::binomial_distribution<int> BinDist(1,prob);
-					int new_state = BinDist(generator_binomial);
-					write_matrix[y*d+x] = new_state+1;
+					//float p = 0.8;
+					//float prob = (-p+1.0)/7.0*sum + (8.0*p-1.0)/7.0;
+					//std::binomial_distribution<int> BinDist(1,prob);
+					//int new_state = BinDist(generator_binomial);
+					//write_matrix[y*d+x] = new_state+1;
+					write_matrix[y*d+x] = 2;
 				}
 				else 
 					write_matrix[y*d+x] = 1;
@@ -97,25 +116,29 @@ void initForest(int d, int *read_matrix, int *write_matrix){
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {
 			int state = rand()%2; 
-			read_matrix[y][x]=state;
-			write_matrix[y][x]=state;
+			read_matrix[y*d+x]=state;
+			write_matrix[y*d+x]=state;
 		}
 	}
 // introduce a burning cell
-	read_matrix[250][250] = 2;
-	write_matrix[250][250] = 2;
+	read_matrix[250*d+250] = 2;
+	write_matrix[250*d+250] = 2;
 }
 
 
+//---------------------------------------------------------//
+//---------------		MAIN FUNCTION ---------------------//
+//---------------------------------------------------------//
 
 int main(int argc, char **argv) {
-	// RNG initialization
-	srand(1);
-	std::default_random_engine generator_binomial;
-	generator_binomial.seed(1);
+	//TODO: RNG initialization CUDA safe
+	//srand(1);
+	//	std::default_random_engine generator_binomial;
+	//generator_binomial.seed(1);
 
 	// Allocate CPU memory
-	const int d = 500;	
+	//const int d = 500;
+	int d = atoi(argv[MATRIX_SIZE]);
 	int size = d * d * sizeof(int);
 	
 	int *read_matrix; 
@@ -134,11 +157,11 @@ int main(int argc, char **argv) {
 	bs_y = atoi(argv[BLOCK_SIZE_Y]);
 
 	dim3 block_size(bs_x, bs_y, 1);
-	dim3 block_number(ceil((d-1)/(float)block_size.x), ceil((d-1)/(float)block_size.y),1);
+	dim3 block_number(ceil((d)/(float)block_size.x), ceil((d)/(float)block_size.y),1);
 	
 	printf("Files: %d, columnes: %d\n",d,d);
 	printf("blocksize_x: %d, blocksize_y: %d\n",bs_x, bs_y);
-	printf("Number of blocks (x): %d, Number of blocks (y): %d",block_number.x, block_number.y);
+	printf("Number of blocks (x): %d, Number of blocks (y): %d \n",block_number.x, block_number.y);
 	
 
 	// Fill read_matrix with initial conditions	
@@ -156,25 +179,29 @@ int main(int argc, char **argv) {
 
 	// Simulation 
 	for (int timestep = 0; timestep < total_steps; timestep++){
-			transition_function<<<block_number, block_size>>>(generator_binomial, d, d_read_matrix, d_write_matrix);
-			// Check for CUDA errors
-			cudaError_t err = cudaGetLastError();
-			if (err != cudaSuccess){
-				printf("CUDA Error: %s\n",cudaGetErrorString(err));
-			}
+		transition_function<<<block_number, block_size>>>(d, d_read_matrix, d_write_matrix);
+		// Check for CUDA errors)
+		cudaError_t err = cudaGetLastError();
+		if (err != cudaSuccess){
+			printf("CUDA Error in transition_function(): %s\n",cudaGetErrorString(err));
+		}
 			
 		swap<<<block_number, block_size>>>(d, d_read_matrix, d_write_matrix);	
 		// Check for CUDA errors
 		err = cudaGetLastError();
 		if (err != cudaSuccess){
-			printf("CUDA Error: %s\n",cudaGetErrorString(err));
+			printf("CUDA Error in swap(): %s\n",cudaGetErrorString(err));
 		}
 	}
 
+	printf("Saving data...");
 	// Copy data from GPU to CPU
 	cudaMemcpy(read_matrix, d_read_matrix, size, cudaMemcpyDeviceToHost);
 	cudaMemcpy(write_matrix, d_write_matrix, size, cudaMemcpyDeviceToHost);
 
+	
+	// Copy data to file
+	saveGrid2Dr(write_matrix,d,argv[OUTPUT_PATH_ID]);
 	
 	printf("Releasing memory...\n");
 	delete [] read_matrix;
