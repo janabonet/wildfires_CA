@@ -118,12 +118,12 @@ void transiction_function(){
                         break;
 
                         case 1: //N 
-                            indexi_middle = getToroidal(vicinato[3].i,d);
-                            indexj_middle = getToroidal(vicinato[3].j,d);
-                            indexi_right = getToroidal(vicinato[7].i,d);
-                            indexj_right = getToroidal(vicinato[7].j,d);
-                            indexi_left = getToroidal(vicinato[8].i,d);
-                            indexj_left = getToroidal(vicinato[8].j,d);
+                            indexi_middle = getToroidal(y,d);
+                            indexj_middle = getToroidal(x+1,d);
+                            indexi_right = getToroidal(y+1,d);
+                            indexj_right = getToroidal(x+1,d);
+                            indexi_left = getToroidal(y-1,d);
+                            indexj_left = getToroidal(x+1,d);
 
                             sum = 8;
 
@@ -161,12 +161,12 @@ void transiction_function(){
                         break;
 
                         case 2: // S
-                            indexi_middle = getToroidal(vicinato[2].i,d);
-                            indexj_middle = getToroidal(vicinato[2].j,d);
-                            indexi_right = getToroidal(vicinato[6].i,d);
-                            indexj_right = getToroidal(vicinato[6].j,d);
-                            indexi_left = getToroidal(vicinato[5].i,d);
-                            indexj_left = getToroidal(vicinato[5].j,d);
+                            indexi_middle = getToroidal(y,d);
+                            indexj_middle = getToroidal(x-1,d);
+                            indexi_right = getToroidal(y+1,d);
+                            indexj_right = getToroidal(x+1,d);
+                            indexi_left = getToroidal(y-1,d);
+                            indexj_left = getToroidal(x-1,d);
 
                             sum = 8;
 
@@ -203,12 +203,12 @@ void transiction_function(){
                         break;
 
                         case 3: // O
-                            indexi_middle = getToroidal(vicinato[4].i,d);
-                            indexj_middle = getToroidal(vicinato[4].j,d);
-                            indexi_right = getToroidal(vicinato[6].i,d);
-                            indexj_right = getToroidal(vicinato[6].j,d);
-                            indexi_left = getToroidal(vicinato[7].i,d);
-                            indexj_left = getToroidal(vicinato[7].j,d);
+                            indexi_middle = getToroidal(y+1,d);
+                            indexj_middle = getToroidal(x,d);
+                            indexi_right = getToroidal(y+1,d);
+                            indexj_right = getToroidal(x-1,d);
+                            indexi_left = getToroidal(y+1,d);
+                            indexj_left = getToroidal(x+1,d);
 
                             sum = 8;
 
@@ -245,12 +245,12 @@ void transiction_function(){
                         break;
 
                         case 4: // E
-                            indexi_middle = getToroidal(vicinato[1].i,d);
-                            indexj_middle = getToroidal(vicinato[1].j,d);
-                            indexi_right = getToroidal(vicinato[8].i,d);
-                            indexj_right = getToroidal(vicinato[8].j,d);
-                            indexi_left = getToroidal(vicinato[5].i,d);
-                            indexj_left = getToroidal(vicinato[5].j,d);
+                            indexi_middle = getToroidal(y-1,d);
+                            indexj_middle = getToroidal(x,d);
+                            indexi_right = getToroidal(y-1,d);
+                            indexj_right = getToroidal(x+1,d);
+                            indexi_left = getToroidal(y-1,d);
+                            indexj_left = getToroidal(x-1,d);
 
                             sum = 8;
 
@@ -287,12 +287,12 @@ void transiction_function(){
                         break;
 
                         case 5: // SO
-                            indexi_middle = getToroidal(vicinato[6].i,d);
-                            indexj_middle = getToroidal(vicinato[6].j,d);
-                            indexi_right = getToroidal(vicinato[2].i,d);
-                            indexj_right = getToroidal(vicinato[2].j,d);
-                            indexi_left = getToroidal(vicinato[4].i,d);
-                            indexj_left = getToroidal(vicinato[4].j,d);
+                            indexi_middle = getToroidal(y+1,d);
+                            indexj_middle = getToroidal(x-1,d);
+                            indexi_right = getToroidal(y,d);
+                            indexj_right = getToroidal(x-1,d);
+                            indexi_left = getToroidal(y+1,d);
+                            indexj_left = getToroidal(x,d);
 
                             sum = 8;
 
@@ -329,12 +329,12 @@ void transiction_function(){
                         break;
 
                         case 6: //NO
-                            indexi_middle = getToroidal(vicinato[7].i,d);
-                            indexj_middle = getToroidal(vicinato[7].j,d);
-                            indexi_right = getToroidal(vicinato[4].i,d);
-                            indexj_right = getToroidal(vicinato[4].j,d);
-                            indexi_left = getToroidal(vicinato[3].i,d);
-                            indexj_left = getToroidal(vicinato[3].j,d);
+                            indexi_middle = getToroidal(y+1,d);
+                            indexj_middle = getToroidal(x+1,d);
+                            indexi_right = getToroidal(y+1,d);
+                            indexj_right = getToroidal(x,d);
+                            indexi_left = getToroidal(y,d);
+                            indexj_left = getToroidal(x+1,d);
 
                             sum = 8;
 
@@ -371,12 +371,12 @@ void transiction_function(){
                         break;
 
                         case 7: //SE 
-                            indexi_middle = getToroidal(vicinato[5].i,d);
-                            indexj_middle = getToroidal(vicinato[5].j,d);
-                            indexi_right = getToroidal(vicinato[1].i,d);
-                            indexj_right = getToroidal(vicinato[1].j,d);
-                            indexi_left = getToroidal(vicinato[2].i,d);
-                            indexj_left = getToroidal(vicinato[2].j,d);
+                            indexi_middle = getToroidal(y-1,d);
+                            indexj_middle = getToroidal(x-1,d);
+                            indexi_right = getToroidal(y-1,d);
+                            indexj_right = getToroidal(x,d);
+                            indexi_left = getToroidal(y,d);
+                            indexj_left = getToroidal(x-1,d);
 
                             sum = 8;
 
@@ -413,12 +413,12 @@ void transiction_function(){
                         break;
                         
                         case 8: //NE
-                            indexi_middle = getToroidal(vicinato[8].i,d);
-                            indexj_middle = getToroidal(vicinato[8].j,d);
-                            indexi_right = getToroidal(vicinato[3].i,d);
-                            indexj_right = getToroidal(vicinato[3].j,d);
-                            indexi_left = getToroidal(vicinato[1].i,d);
-                            indexj_left = getToroidal(vicinato[1].j,d);
+                            indexi_middle = getToroidal(y-1,d);
+                            indexj_middle = getToroidal(x+1,d);
+                            indexi_right = getToroidal(y,d);
+                            indexj_right = getToroidal(x+1,d);
+                            indexi_left = getToroidal(y-1,d);
+                            indexj_left = getToroidal(x,d);
 
                             sum = 8;
 
@@ -501,51 +501,18 @@ void initForest()
 		}
 	}
 // introduce a burning cell
-	read_matrix[250][250] = 2;
-	write_matrix[250][250] = 2;
 
-    read_matrix[251][251] = 2;
-	write_matrix[251][251] = 2;
-
-    read_matrix[251][249] = 2;
-	write_matrix[251][249] = 2;
-
-    read_matrix[249][249] = 2;
-	write_matrix[249][249] = 2;
-
-    read_matrix[249][251] = 2;
-	write_matrix[249][251] = 2;
-
-    read_matrix[249][250] = 2;
-	write_matrix[249][250] = 2;
-
-    read_matrix[250][251] = 2;
-	write_matrix[250][251] = 2;
-
-    read_matrix[250][249] = 2;
-	write_matrix[250][249] = 2;
-
-    read_matrix[250][251] = 2;
-	write_matrix[249][251] = 2;
-
-    // altres
-
-    read_matrix[250][252] = 2;
-	write_matrix[250][252] = 2;
-
-    read_matrix[250][253] = 2;
-	write_matrix[250][253] = 2;
-
-    read_matrix[250][248] = 2;
-	write_matrix[250][248] = 2;
-
-    read_matrix[250][247] = 2;
-	write_matrix[250][247] = 2;
-
-    read_matrix[250][254] = 2;
-	write_matrix[250][254] = 2;
-
-
+    for (int i = -1; i <= 1; i++){
+        for (int j = -1; j <= 1; j++){
+            if (!(i == 0 && j == 0)){
+                int indexi = getToroidal(500+i,d);
+                int indexj = getToroidal(500+j,d);
+                read_matrix[indexi][indexj] = 2;
+                write_matrix[indexi][indexj] = 2;
+                
+            } 
+        }
+    }
 }
 
 // INIT ALLEGRO
