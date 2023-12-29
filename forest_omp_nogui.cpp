@@ -3,20 +3,39 @@
 #include <random>
 #include <omp.h>
 //using namespace std;
+#include <iostream>
+#include <stdio.h>
 
-const int d = 500;
+// I/O parameters used to index argv[]
+#define OUTPUT_PATH_ID 1
+#define STEPS_ID 2
+#define MATRIX_SIZE 3
 
-struct cell{
-	int i;
-	int j;
-};
+#define STRLEN 256
 
-const int neighborhood_size=9;
+// Function to save last configuration
+bool saveGrid2Dr(int *M, int d, char *path){
+	FILE *f;
+	f = fopen(path,"w");
 
-//STATES -------
-int write_matrix[d][d];  // Write Matrix
-int read_matrix[d][d];
+	if (!f)
+		return false;
 
+	char str[STRLEN];
+	for (int i = 0; i < d; i++){
+		for (int j = 0; j < d; j++){
+			sprintf(str,"%d ",M[i*d+j]);
+			fprintf(f,"%s ", str);
+		}
+		fprintf(f,"\n");
+	}
+	fclose(f);
+
+	return true;
+}
+
+
+// Assure Periodic Boundary Conditions
 int getToroidal(int i, int size){
 	if(i < 0){
 		return i+size;
@@ -28,91 +47,97 @@ int getToroidal(int i, int size){
 	return i;
 }
 
-void transiction_function(std::default_random_engine generator_binomial){
-	//std::default_random_engine generator_BurnableToBurning;
-	//std::binomial_distribution<int> distribution_BurnableToBurning(1,0.95); //p =0.3 de passar de burnable a burning
+void transiction_function(int d, int *read_matrix, int *write_matrix){
 	int sum;
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {	
-		switch(read_matrix[y][x]){
+		switch(read_matrix[y*d+x]){
 			case 0: 
-				write_matrix[y][x] = 0; 
+				write_matrix[y*d+x] = 0; 
 				break;
 			case 1:
 				sum = 0;
-				for (i = -1; i <= 1; i++){
-					for (j = -1; i <= 1; j++){
+				for (int i = -1; i <= 1; i++){
+					for (int j = -1; j <= 1; j++){
 						if (!(i == 0 && j == 0)){
-							int indexi = getToroidal(y+y,d);
+							int indexi = getToroidal(y+i,d);
 							int indexj = getToroidal(x+j,d);
-							if (read_matrix[indexi][indexj] == 2)
+							if (read_matrix[indexi*d+indexj] == 2)
 								sum += 1;
 						}
 					}
 				}
 
 				if (sum > 0){
-					float p = 0.8;
-					float prob = (-p+1.0)/7.0*sum + (8.0*p-1.0)/7.0;
-					std::binomial_distribution<int> BinDist(1,prob);
-					new_state_BurnableToBurning[y][x] = BinDist(generator_binomial);
-					write_matrix[y][x] = new_state_BurnableToBurning+1;
+					write_matrix[y*d+x] = 2;
 				}
 				else 
-					write_matrix[y][x] = 1;
+					write_matrix[y*d+x] = 1;
 				break;
 				
 			case 2:
-				write_matrix[y][x] = 3;
+				write_matrix[y*d+x] = 3;
 				break;
 
 			case 3:
-				write_matrix[y][x] = 3;
+				write_matrix[y*d+x] = 3;
 				break;
 			}
 		}
 	}
 }
 
-void swap(){
+void swap(int d, int *read_matrix, int *write_matrix){
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {
-			read_matrix[y][x] = write_matrix[y][x];
+			read_matrix[y*d+x] = write_matrix[y*d+x];
 		}
 	}
 }
 
-void global_transiction_function(std::default_random_engine generator_binomial){
-	transiction_function(generator_binomial);
-	swap();
-}
 
-void initForest()
-{
 // This function generates the forest (grid) and assigns each cell one of the two possible states: rock (not burnable) or tree (burnable)
+void initForest(int d, int *read_matrix, int *write_matrix){
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {
 			int state = rand()%2; 
-			read_matrix[y][x]=state;
-			write_matrix[y][x]=state;
+			read_matrix[y*d+x]=state;
+			write_matrix[y*d+x]=state;
 		}
 	}
 // introduce a burning cell
-	read_matrix[250][250] = 2;
-	write_matrix[250][250] = 2;
+	read_matrix[250*d+250] = 2;
+	write_matrix[250*d+250] = 2;
 }
 
 
 
-int main() {
-	srand(1);
-	std::default_random_engine generator_binomial;
-	generator_binomial.seed(1);
-	
-	initForest();
+int main(int argc, char **argv) {
+	int d = atoi(argv[MATRIX_SIZE]);
+	int size = d*d*sizeof(int);
 
-	for (int timestep = 0; timestep < 1000; timestep++){
-		global_transiction_function(generator_binomial);
+	int *read_matrix;
+	int *write_matrix;
+	read_matrix = (int *)malloc(size);
+	write_matrix = (int *)malloc(size);
+
+	int total_steps = atoi(argv[STEPS_ID]);
+
+	// Fill read_matrix with initial conditions
+	initForest(d, read_matrix, write_matrix);
+
+
+	printf("Starting simulation ...\n")
+	for (int timestep = 0; timestep < total_steps; timestep++){
+		transiction_function(d, read_matrix, write_matrix);
+		swap(d,read_matrix,write_matrix);
 	}
+
+	printf("Saving data to file...\n");
+	saveGrid2Dr(write_matrix, d, argv[OUTPUT_PATH_ID]);
+
+	delete [] read_matrix;
+	delete [] write_matrix;
+
 	return 0;
 }
