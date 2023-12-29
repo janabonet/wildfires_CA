@@ -10,11 +10,12 @@
 #include <stdio.h>
 
 // I/O parameters used to index argv[]
-#define STEPS_ID		1
-#define BLOCK_SIZE_X	2
-#define BLOCK_SIZE_Y	3
-#define MATRIX_SIZE		4
-#define OUTPUT_PATH_ID	5 
+#define OUTPUT_PATH_ID	1
+#define STEPS_ID		2
+#define BLOCK_SIZE_X	3
+#define BLOCK_SIZE_Y	4
+#define MATRIX_SIZE		5
+
 #define STRLEN			256
 
 
@@ -56,8 +57,8 @@ __device__ int getToroidal(int i, int size){
 
 // TODO: Arreglar generador random
 __global__ void transition_function(int d, int *read_matrix, int *write_matrix){
-	int x = (blockDim.x*blockIdx.x + threadIdx.x) + 1;
-	int y = (blockDim.y*blockIdx.y + threadIdx.y) + 1;
+	int x = (blockDim.x*blockIdx.x + threadIdx.x);
+	int y = (blockDim.y*blockIdx.y + threadIdx.y);
 
 	int sum;
 
@@ -70,7 +71,7 @@ __global__ void transition_function(int d, int *read_matrix, int *write_matrix){
 			case 1:
 				sum = 0;
 				for (int i = -1; i <= 1; i++){
-					for (int j = -1; i <= 1; j++){
+					for (int j = -1; j <= 1; j++){
 						if (!(i == 0 && j == 0)){
 							int indexi = getToroidal(y+i,d);
 							int indexj = getToroidal(x+j,d);
@@ -90,21 +91,21 @@ __global__ void transition_function(int d, int *read_matrix, int *write_matrix){
 				}
 				else 
 					write_matrix[y*d+x] = 1;
-				break;
-				
+				break;	
 			case 2:
 				write_matrix[y*d+x] = 3;
 				break;
 			case 3:
 				write_matrix[y*d+x] = 3;
 				break;
-			}
+	
+	}
 		}
 }
 
 __global__ void swap(int d, int *read_matrix, int *write_matrix){
-	int x = (blockDim.x*blockIdx.x + threadIdx.x) + 1;
-	int y = (blockDim.y*blockIdx.y + threadIdx.y) + 1;
+	int x = (blockDim.x*blockIdx.x + threadIdx.x);
+	int y = (blockDim.y*blockIdx.y + threadIdx.y);
 	if (x < d && y < d){
 		read_matrix[y*d+x] = write_matrix[y*d+x];
 	}
@@ -120,7 +121,7 @@ void initForest(int d, int *read_matrix, int *write_matrix){
 			write_matrix[y*d+x]=state;
 		}
 	}
-// introduce a burning cell
+	// introduce a burning cell
 	read_matrix[250*d+250] = 2;
 	write_matrix[250*d+250] = 2;
 }
@@ -137,14 +138,13 @@ int main(int argc, char **argv) {
 	//generator_binomial.seed(1);
 
 	// Allocate CPU memory
-	//const int d = 500;
 	int d = atoi(argv[MATRIX_SIZE]);
 	int size = d * d * sizeof(int);
 	
+	printf("Dimensio: %d",d);
+
 	int *read_matrix; 
 	int *write_matrix;
-	//read_matrix = new int[d][d];
-	//write_matrix = new int[d][d];
 	read_matrix = (int *)malloc(size);
 	write_matrix = (int *)malloc(size);
 
@@ -162,7 +162,7 @@ int main(int argc, char **argv) {
 	printf("Files: %d, columnes: %d\n",d,d);
 	printf("blocksize_x: %d, blocksize_y: %d\n",bs_x, bs_y);
 	printf("Number of blocks (x): %d, Number of blocks (y): %d \n",block_number.x, block_number.y);
-	
+	printf("Number of steps: %d",total_steps);
 
 	// Fill read_matrix with initial conditions	
 	initForest(d, read_matrix, write_matrix);
@@ -179,13 +179,14 @@ int main(int argc, char **argv) {
 
 	// Simulation 
 	for (int timestep = 0; timestep < total_steps; timestep++){
+		// Apply transition function
 		transition_function<<<block_number, block_size>>>(d, d_read_matrix, d_write_matrix);
-		// Check for CUDA errors)
+		// Check for CUDA errors
 		cudaError_t err = cudaGetLastError();
 		if (err != cudaSuccess){
 			printf("CUDA Error in transition_function(): %s\n",cudaGetErrorString(err));
 		}
-			
+		// Swap read and write matrix
 		swap<<<block_number, block_size>>>(d, d_read_matrix, d_write_matrix);	
 		// Check for CUDA errors
 		err = cudaGetLastError();
