@@ -49,7 +49,7 @@ int getToroidal(int i, int size){
 }
 
 // void transiction_function(int d, int *read_matrix, int *write_matrix, std:: default_random_engine generator_b2b){
-void transiction_function(int d, int *read_matrix, int *write_matrix, int *seed_matrix, int seed){
+void transition_function(int d, int total_steps, int *read_matrix, int *write_matrix, int *seed_matrix){
 	int sum;
 	#pragma omp parallel for schedule(dynamic)
 	for (int y = 0; y < d; ++y) {
@@ -72,10 +72,9 @@ void transiction_function(int d, int *read_matrix, int *write_matrix, int *seed_
 				}
 
 				if (sum > 0){
-					// Fetch seed
-					seed_matrix[y*d+x] = y+x;
+					// seed_matrix[y*d+x] = y+x +5;
 					std::default_random_engine generator_b2b;
-					generator_b2b.seed(seed_matrix[x*d+y]);
+					generator_b2b.seed(seed_matrix[total_steps*x*y+y*d+x]);
 						 
 					float prob = 0.2/7.0*sum + 5.4/7.0;
 					std::binomial_distribution<int> dist_b2b(1,prob);
@@ -132,7 +131,7 @@ void initForest(int d, int *read_matrix, int *write_matrix){
 int main(int argc, char **argv) {
 	// Starting seeds
 	printf("principi\n");
-	srand(25);
+	srand(1);
 	printf("srandejat\n");
 	// Memory allocation
 	int d = atoi(argv[MATRIX_SIZE]);
@@ -141,7 +140,6 @@ int main(int argc, char **argv) {
 
 	printf("d = %d\n",d);
 	printf("total steps = %d\n",total_steps);
-	printf("");
 
 	// Matrices of CA
 	int *read_matrix;
@@ -162,7 +160,7 @@ int main(int argc, char **argv) {
 	printf("Starting simulation ...\n");
 	for (int timestep = 0; timestep < total_steps; timestep++){
 		
-		transiction_function(d, read_matrix, write_matrix, seed_matrix,1);
+		transition_function(d, total_steps, read_matrix, write_matrix, seed_matrix);
 		swap(d,read_matrix,write_matrix);
 	}
 

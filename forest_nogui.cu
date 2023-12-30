@@ -3,6 +3,7 @@
 #include <random>
 #include <malloc.h>
 #include <cuda.h>
+	#include <time.h>
 //using namespace std;
 
 //maybe
@@ -55,8 +56,7 @@ __device__ int getToroidal(int i, int size){
 }
 
 
-// TODO: Arreglar generador random
-__global__ void transition_function(int d, int *read_matrix, int *write_matrix){
+__global__ void transition_function(int d, int total_steps, int *read_matrix, int *write_matrix, int *seed_matrix){
 	int x = (blockDim.x*blockIdx.x + threadIdx.x);
 	int y = (blockDim.y*blockIdx.y + threadIdx.y);
 
@@ -82,12 +82,12 @@ __global__ void transition_function(int d, int *read_matrix, int *write_matrix){
 				}
 
 				if (sum > 0){
-					//float p = 0.8;
-					//float prob = (-p+1.0)/7.0*sum + (8.0*p-1.0)/7.0;
-					//std::binomial_distribution<int> BinDist(1,prob);
-					//int new_state = BinDist(generator_binomial);
-					//write_matrix[y*d+x] = new_state+1;
-					write_matrix[y*d+x] = 2;
+					std::default_random_engine generator_b2b;
+					generator_b2b.seed(seed_matrix[total_steps*x*y + y*d+x]);
+
+					float prob = 0.2/7.0*sum + 5.4/7.0;
+					std::binomial_distribution<int> dist_b2b(1,prob);
+					write_matrix[y*d+x] = dist_b2b(generator_b2b) + 1;
 				}
 				else 
 					write_matrix[y*d+x] = 1;
@@ -111,6 +111,10 @@ __global__ void swap(int d, int *read_matrix, int *write_matrix){
 	}
 }
 
+void random_seed_matrix(int total_steps, int d, int *seed_array){
+	for (int i = 0; i< total_steps*d*d; i++)
+		seed_array[i] = rand()%100;
+}
 
 void initForest(int d, int *read_matrix, int *write_matrix){
 // This function generates the forest (grid) and assigns each cell one of the two possible states: rock (not burnable) or tree (burnable)
@@ -132,25 +136,22 @@ void initForest(int d, int *read_matrix, int *write_matrix){
 //---------------------------------------------------------//
 
 int main(int argc, char **argv) {
-	//TODO: RNG initialization CUDA safe
-	//srand(1);
-	//	std::default_random_engine generator_binomial;
+	srand(1);
+	
 	//generator_binomial.seed(1);
 
 	// Allocate CPU memory
 	int d = atoi(argv[MATRIX_SIZE]);
-	int size = d * d * sizeof(int);
-	
+	int size = d * d * sizeof(int);	
+	int total_steps = atoi(argv[STEPS_ID]);
+
 	printf("Dimensio: %d",d);
 
-	int *read_matrix; 
-	int *write_matrix;
+	int *read_matrix, *write_matrix, *seed_matrix; 
 	read_matrix = (int *)malloc(size);
-	write_matrix = (int *)malloc(size);
+	write_matrix = (int *)malloc(size);	
+	seed_matrix = (int *)malloc(size*total_steps);
 
-
-	int total_steps = atoi(argv[STEPS_ID]);
-	
 	// Block size and number of blocks
 	int bs_x, bs_y;
 	bs_x = atoi(argv[BLOCK_SIZE_X]);
@@ -166,29 +167,32 @@ int main(int argc, char **argv) {
 
 	// Fill read_matrix with initial conditions	
 	initForest(d, read_matrix, write_matrix);
+	// Fill seed matrix
+	random_seed_matrix(total_steps,d,seed_matrix);
 	
 	// Allocate memory in GPU and copy data  
-	int *d_read_matrix, *d_write_matrix;
+	int *d_read_matrix, *d_write_matrix, *d_seed_matrix;
 	
 	cudaMalloc((void**) &d_read_matrix, size);
 	cudaMalloc((void**) &d_write_matrix, size);
+	cudaMalloc((void**) &d_seed_matrix, size*total_steps);
 
 	cudaMemcpy(d_read_matrix, read_matrix, size, cudaMemcpyHostToDevice);
 	cudaMemcpy(d_write_matrix, write_matrix, size, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_seed_matrix, seed_matrix, size*total_steps, cudaMemcpyHostToDevice);
 
 
 	// Simulation 
 	for (int timestep = 0; timestep < total_steps; timestep++){
 		// Apply transition function
-		transition_function<<<block_number, block_size>>>(d, d_read_matrix, d_write_matrix);
-		// Check for CUDA errors
+		transition_function<<<block_number, block_size>>>(d, total_steps, d_read_matrix, d_write_matrix, d_seed_matrix);
+
 		cudaError_t err = cudaGetLastError();
 		if (err != cudaSuccess){
 			printf("CUDA Error in transition_function(): %s\n",cudaGetErrorString(err));
 		}
 		// Swap read and write matrix
 		swap<<<block_number, block_size>>>(d, d_read_matrix, d_write_matrix);	
-		// Check for CUDA errors
 		err = cudaGetLastError();
 		if (err != cudaSuccess){
 			printf("CUDA Error in swap(): %s\n",cudaGetErrorString(err));
@@ -207,7 +211,9 @@ int main(int argc, char **argv) {
 	printf("Releasing memory...\n");
 	delete [] read_matrix;
 	delete [] write_matrix;
+	delete [] seed_matrix;
 	cudaFree(d_read_matrix);
 	cudaFree(d_write_matrix);
+	cudaFree(d_seed_matrix);
 	return 0;
 }
