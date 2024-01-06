@@ -1,9 +1,15 @@
 #!/bin/bash
-#SBATCH --chdir=/scratch/nas/1/siri1010/wildfires_CA/scalability
+#SBATCH --chdir=/scratch/nas/1/siri1010/wildfires_CA/scalability/
 #SBATCH --output=/scratch/nas/1/siri1010/wildfires_CA/scalability/sortida-strong-%j.out
 #SBATCH --error=/scratch/nas/1/siri1010/wildfires_CA/scalability/error-strong-%j.out
+#SBATCH --job-name="cuda"
+#SBATCH -A cuda
+#SBATCH -p cuda
+#SBATCH --gres=gpu:1
+
 
 echo "CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES"
+
 # OUTPUT steps blocksize_x blocksize_y matrix_dimension (es quadrada)  
 #./forest_cuda_nogui OUTPUT_ºFILE.txt 10 10 10 10000 
 
@@ -34,9 +40,9 @@ rm -rf $outputpath2 2> /dev/null
 
 # Compile binaries just in case
 echo Compiling
-make serial
-make omp
-make cuda
+g++ $SEQ_SRC -o $SEQ_EXEC -O3
+g++ -fopenmp $OMP_SRC -o $OMP_EXEC -O3
+#nvcc -o $CUDA_EXEC $CUDA_SRC -O3
 
 # Sequential execution
 echo Executing $SEQ sequentially

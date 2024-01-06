@@ -8,9 +8,8 @@
 #include <stdio.h>
 
 // I/O parameters used to index argv[]
-#define OUTPUT_PATH_ID 1
-#define STEPS_ID 2
-#define MATRIX_SIZE 3
+#define STEPS_ID 1
+#define MATRIX_SIZE 2
 
 #define STRLEN 256
 
@@ -131,9 +130,6 @@ int main(int argc, char **argv) {
 	int size = d*d*sizeof(int);
 	int total_steps = atoi(argv[STEPS_ID]);
 
-	printf("d = %d\n",d);
-	printf("total steps = %d\n",total_steps);
-
 	// Matrices of CA
 	int *read_matrix;
 	int *write_matrix;
@@ -143,16 +139,10 @@ int main(int argc, char **argv) {
 	// Fill read_matrix with initial conditions
 	initForest(d, read_matrix, write_matrix);
 
-	printf("Starting simulation ...\n");
 	for (int timestep = 0; timestep < total_steps; timestep++){
-		
 		transition_function(d, total_steps, read_matrix, write_matrix);
 		swap(d,read_matrix,write_matrix);
 	}
-
-	printf("Saving data to file...\n");
-	saveGrid2Dr(write_matrix, d, argv[OUTPUT_PATH_ID]);
-
 	delete [] read_matrix;
 	delete [] write_matrix;
 	

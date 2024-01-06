@@ -6,8 +6,4 @@ forest_serial_nogui
 forest_omp_nogui
 forest_cuda_nogui
 
-<<<<<<< HEAD
 Makefile
-=======
-Makefile
->>>>>>> 9a76169201d3c9781c5acedfc4455d619112f822
