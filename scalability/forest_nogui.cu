@@ -11,11 +11,10 @@
 #include <stdio.h>
 
 // I/O parameters used to index argv[]
-#define OUTPUT_PATH_ID	1
-#define STEPS_ID		2
-#define BLOCK_SIZE_X	3
-#define BLOCK_SIZE_Y	4
-#define MATRIX_SIZE		5
+#define STEPS_ID		1
+#define BLOCK_SIZE_X	2
+#define BLOCK_SIZE_Y	3
+#define MATRIX_SIZE		4
 
 #define STRLEN			256
 
@@ -139,8 +138,6 @@ int main(int argc, char **argv) {
 	int size = d * d * sizeof(int);	
 	int total_steps = atoi(argv[STEPS_ID]);
 
-	printf("Dimensio: %d",d);
-
 	int *read_matrix, *write_matrix;
 	read_matrix = (int *)malloc(size);
 	write_matrix = (int *)malloc(size);	
@@ -152,12 +149,6 @@ int main(int argc, char **argv) {
 
 	dim3 block_size(bs_x, bs_y, 1);
 	dim3 block_number(ceil((d)/(float)block_size.x), ceil((d)/(float)block_size.y),1);
-
-	// Console statements
-	printf("Files: %d, columnes: %d\n",d,d);
-	printf("blocksize_x: %d, blocksize_y: %d\n",bs_x, bs_y);
-	printf("Number of blocks (x): %d, Number of blocks (y): %d \n",block_number.x, block_number.y);
-	printf("Number of steps: %d",total_steps);
 
 	// Fill read_matrix with initial conditions	
 	initForest(d, read_matrix, write_matrix);
@@ -188,16 +179,11 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	printf("Saving data...");
 	// Copy data from GPU to CPU
 	cudaMemcpy(read_matrix, d_read_matrix, size, cudaMemcpyDeviceToHost);
 	cudaMemcpy(write_matrix, d_write_matrix, size, cudaMemcpyDeviceToHost);
 
 	
-	// Copy data to file
-	saveGrid2Dr(write_matrix,d,argv[OUTPUT_PATH_ID]);
-	
-	printf("Releasing memory...\n");
 	delete [] read_matrix;
 	delete [] write_matrix;
 	cudaFree(d_read_matrix);
