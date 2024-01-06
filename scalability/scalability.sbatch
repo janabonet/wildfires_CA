@@ -12,7 +12,7 @@ echo "CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES"
 #./forest_cuda_nogui OUTPUT_ºFILE.txt 10 10 10 10000 
 
 # file names
-SEQ_SRC=forest_nogui.cpp
+SEQ_SRC=forest__ser_nogui.cpp
 OMP_SRC=forest_omp_nogui.cpp
 CUDA_SRC=forest_nogui.cu
 # Executable names
