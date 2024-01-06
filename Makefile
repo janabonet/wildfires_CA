@@ -67,4 +67,9 @@ run_cuda_nogui:
 	./$(EXEC_CUDA_NOGUI)
 
 clean: 
+<<<<<<< HEAD
 	rm *.out
+=======
+	rm *.out
+	
+>>>>>>> 9a76169201d3c9781c5acedfc4455d619112f822

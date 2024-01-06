@@ -11,7 +11,7 @@
 #define OUTPUT_PATH_ID 1
 #define STEPS_ID 2
 #define MATRIX_SIZE 3
-
+#define SEED_INPUT_PATH_ID 4
 #define STRLEN 256
 
 // Function to save last configuration
@@ -35,7 +35,40 @@ bool saveGrid2Dr(int *M, int d, char *path){
 	return true;
 }
 
+// Function to load seed matrix at timestep 
+// bool loadGrid2Dr(int *M, int d, int timestep, char *path){
+// 	FILE *f;
+// 	f = fopen(path,"r");
 
+// 	if (!f)
+// 		return false;
+
+// 	// char str[STRLEN];
+// 	for (int i = 0; i < d; i++){
+// 		for (int j = 0; j < d; j++){
+// 			// fscanf(f,"%s",str);
+// 			// M[i*d + j] = atoi(str);
+// 			fscanf(f,"%d", &M[i*d+j]);
+// 		}		
+// 	}
+// 	fclose(f);
+// 	return true;
+// }
+
+bool loadGrid2Dr(int *M, int d, int timestep, FILE *f){
+// bool loadGrid2Dr(int *M, int d, int timestep, char *path){
+	// FILE *f;
+	// f = fopen(path,"r");
+
+	if (!f)
+		return false;
+
+	for (int i = 0; i < d*d; i++){
+		fscanf(f,"%d", &M[i]);
+	}
+	// fclose(f);
+	return true;
+}
 // Assure Periodic Boundary Conditions
 int getToroidal(int i, int size){
 	if(i < 0){
@@ -72,12 +105,12 @@ void transition_function(int d, int total_steps, int *read_matrix, int *write_ma
 				}
 
 				if (sum > 0){
-					// seed_matrix[y*d+x] = y+x +5;
 					std::default_random_engine generator_b2b;
-					generator_b2b.seed(seed_matrix[total_steps*x*y+y*d+x]);
+					generator_b2b.seed(seed_matrix[y*d+x]);
 						 
 					float prob = 0.2/7.0*sum + 5.4/7.0;
 					std::binomial_distribution<int> dist_b2b(1,prob);
+					
 					write_matrix[y*d+x] = dist_b2b(generator_b2b) + 1;
 				}
 				else 
@@ -104,14 +137,6 @@ void swap(int d, int *read_matrix, int *write_matrix){
 	}
 }
 
-
-void random_seed_matrix(int total_steps, int d, int *seed_array){
-	for (int i = 0; i < total_steps*d*d; i++){
-		seed_array[i] = rand()%100;	
-	}
-}
-
-
 // This function generates the forest (grid) and assigns each cell one of the two possible states: rock (not burnable) or tree (burnable)
 void initForest(int d, int *read_matrix, int *write_matrix){
 	for (int y = 0; y < d; ++y) {
@@ -132,7 +157,6 @@ int main(int argc, char **argv) {
 	// Starting seeds
 	printf("principi\n");
 	srand(1);
-	printf("srandejat\n");
 	// Memory allocation
 	int d = atoi(argv[MATRIX_SIZE]);
 	int size = d*d*sizeof(int);
@@ -152,18 +176,20 @@ int main(int argc, char **argv) {
 	printf("Allocated readwrite\n");
 	// Generate seeds (one matrix for each timestep) 
 	int *seed_matrix;
-	seed_matrix = (int *)malloc(size*total_steps);
-	random_seed_matrix(total_steps, d, seed_matrix);
-	printf("Allocated seedmatrix\n");
+	seed_matrix = (int *)malloc(size);
+	printf("Created seedmatrix\n");
 
-
+	FILE *seed_file = fopen(argv[SEED_INPUT_PATH_ID],"r");
 	printf("Starting simulation ...\n");
 	for (int timestep = 0; timestep < total_steps; timestep++){
-		
+		// loadGrid2Dr(seed_matrix, d, timestep, argv[SEED_INPUT_PATH_ID]);
+		loadGrid2Dr(seed_matrix, d, timestep, seed_file);
 		transition_function(d, total_steps, read_matrix, write_matrix, seed_matrix);
 		swap(d,read_matrix,write_matrix);
 	}
 
+	fclose(seed_file);
+	
 	printf("Saving data to file...\n");
 	saveGrid2Dr(write_matrix, d, argv[OUTPUT_PATH_ID]);
 
