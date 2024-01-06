@@ -91,7 +91,7 @@ void transiction_function(){
                     write_matrix[y][x] = 0; 
                     break;
                 case 1: // burnable
-                    create_neighborhood(y,x); //agafem les veïnes de la cel·la observadda
+                    // create_neighborhood(y,x); //agafem les veïnes de la cel·la observada
                     switch(vent) {
                         case 0: //no vent
                             sum = 0;
@@ -556,7 +556,6 @@ void drawwithAllegro(){
 	textprintf_ex(buffer, font, 0 ,0, white, black, "step %d ", step);
 	blit(buffer,screen, 0, 0,0,0,b_screen, h_screen);
 }
-
 
 int main() {
 	initAllegro();
