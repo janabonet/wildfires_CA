@@ -5,3 +5,5 @@ forest_cuda
 forest_serial_nogui
 forest_omp_nogui
 forest_cuda_nogui
+
+Makefile
