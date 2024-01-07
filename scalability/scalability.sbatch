@@ -3,28 +3,35 @@
 #SBATCH --output=/scratch/nas/1/siri1010/wildfires_CA/scalability/sortida-strong-%j.out
 #SBATCH --error=/scratch/nas/1/siri1010/wildfires_CA/scalability/error-strong-%j.out
 
-echo "CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES"
-# OUTPUT steps blocksize_x blocksize_y matrix_dimension (es quadrada)  
-#./forest_cuda_nogui OUTPUT_ºFILE.txt 10 10 10 10000 
+# Description of program usage
+USAGE="\n Usage: sbatch scalability.sbatch [options] \n
+		options		-> size: Size of the matrix (default 1000) \n
+					-> steps: Number of time steps (default 1000) \n
+					-> np_NMAX: Maximum number of OMP threads (default 20)\n"
+
 
 # file names
 SEQ_SRC=forest_ser_nogui.cpp
 OMP_SRC=forest_omp_nogui.cpp
-CUDA_SRC=forest_nogui.cu
 # Executable names
 SEQ_EXEC=forest_serial_nogui
 OMP_EXEC=forest_omp_nogui
-CUDA_EXEC=forest_cuda_nogui
 
 # Parameters
-size=1000
-steps=1000
+if [ $# -eq 2 ]; then
+	size=$1
+	steps=$2
+	np_NMAX=$3
+else
+	size=1000
+	steps=1000
+	np_NMAX=20
+	echo Executing with default parameters
+fi
 np_NMIN=1
-np_NMAX=20
-N=3
+N=3 # number of executions
 
 out=/tmp/out.$$
-#aux=/tmp/aux.$$
 
 # Output file creation
 outputpath=./elapsed.txt
@@ -47,7 +54,6 @@ while (test $i -lt $N)
 		do
 			/usr/bin/time --format=%e ./$SEQ_EXEC $steps $size > $out 2>&1 
 
-			#time=`grep execution $out| cut -b 36-43`
 			time=$(< $out)
 
 			st=`echo "$time < $min_elapsed" | bc`
@@ -81,7 +87,6 @@ while (test $PARS -le $np_NMAX)
 				export OMP_NUM_THREADS=$PARS
 					/usr/bin/time --format=%e ./$OMP_EXEC $steps $size > $out 2>&1 
 
-				#time=`grep execution $out| cut -n 36-43`
 				time=$(< $out)
 
 				st=`echo "$time < $min_elapsed" | bc`
@@ -115,5 +120,5 @@ while (test $PARS -le $np_NMAX)
 done
 
 
-mv $outputpath ./elapsed-$OMP_EXEC-$size.txt
-mv $outputpath2 ./speedup-$OMP_EXEC-$size.txt
+mv $outputpath ./resultats/elapsed-$OMP_EXEC-$size.txt
+mv $outputpath2 ./resultats/speedup-$OMP_EXEC-$size.txt

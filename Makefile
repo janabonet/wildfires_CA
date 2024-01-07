@@ -68,7 +68,3 @@ run_cuda_nogui:
 
 clean: 
 	rm *.out
-<<<<<<< HEAD
-	
-=======
->>>>>>> e2fcd615230ef25442cb9a75a57945f47a54df6d
