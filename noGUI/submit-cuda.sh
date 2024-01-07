@@ -1,38 +1,34 @@
 #!/bin/bash
-#SBATCH --job-name=submit-extrae.sh
-#SBATCH -D .
-#SBATCH --output=output-%j.out
-#SBATCH --error=error-%j.out
+#SBATCH --chdir=/scratch/nas/1/siri1010/wildfires_CA/noGUI/
+#SBATCH --output=/scratch/nas/1/siri1010/wildfires_CA/noGUI/sortida-%j.out
+#SBATCH --error=/scratch/nas/1/siri1010/wildfires_CA/noGUI/error-%j.out
+#SBATCH --job-name="cuda"
+#SBATCH -A cuda
+#SBATCH -p cuda
+#SBATCH --gres=gpu:1
 
 USAGE="\n USAGE: submit-extrae.sh prog [options] \n
 		prog		-> Program name \n
 		options		-> matrix_size num_steps num_procs (default values 1000 1000 8 \n" 
 
 # Parameters
-if [ $# -eq 4 ]; then
+if [ $# -eq 5 ]; then
     size=$2
 	steps=$3
-	nprocs=$4
+	bs_x=$4
+	bs_y=$5
 else
 	size=1000
 	steps=500
-	nprocs=8
+	bs_x=10
+	bs_y=10
 echo Executing with default parameters
 fi
 
-if (test $# -ne 1 && test $# -ne 4)
+if (test $# -ne 1 && test $# -ne 5)
 then
         echo -e $USAGE
 		        exit 0
-fi
-
-
-HOST=$(echo $HOSTNAME | cut -f 1 -d'.')
-
-if [ ${HOST} = 'boada-6' ] || [ ${HOST} = 'boada-7' ] || [ ${HOST} == 'boada-8' ]
-then
-	echo "Use sbatch to execute this script"
-	exit 0
 fi
 
 
@@ -40,11 +36,10 @@ fi
 # Compile file
 make $1
 
-export OMP_NUM_THREADS=$nprocs
 export KMP_AFFINITY=scatter
 
 export LD_PRELOAD=${EXTRAE_HOME}/lib/libomptrace.so
-./$1 temp_output.txt $steps $size
+./$1 temp_output.txt $steps $bs_x $bs_y $size
 unset LD_PRELOAD
 rm -f temp_output.txt
 
