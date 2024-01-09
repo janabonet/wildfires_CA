@@ -49,15 +49,26 @@ int getToroidal(int i, int size){
 	return i;
 }
 
-void transiction_function(std::default_random_engine generator_BurnableToBurning){
-	// std::binomial_distribution<int> distribution_BurnableToBurning(1,0.85); //p =0.3 de passar de burnable a burning
+class ThreadSafeRNG{
+public:
+	ThreadSafeRNG{
+		unsigned int seed = static_cast<unsigned int>(omp_get_thread_num());
+		generator.seed(seed);
+	}
+	int getBinNumber(double p){
+		std::binomial_distribution<int> distribution_(1,prob);
+		return distribution_BurnableToBurning(generator);
+	}
+private:
+	std::default_random_engine generator;
+};
 
-#pragma omp parallel
-	{
+
+
+void transiction_function(threadSafeRNG rng){
+
 	int sum;
-	int i, j;		
-	int new_state_BurnableToBurning;	
-	#pragma omp for private(sum,i,j,new_state_BurnableToBurning,generator_BurnableToBurning)
+	#pragma omp for 
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {
 			if (read_matrix[y][x] == 0) //(not burnable)
@@ -65,27 +76,24 @@ void transiction_function(std::default_random_engine generator_BurnableToBurning
 				write_matrix[y][x] = 0; // cell remains not burnable
 			}
 			else if (read_matrix[y][x] == 1) //burnable)
-				{
-					sum = 0;
-						for (i = -1; i <= 1; i++){
-						for (j = -1; j <= 1; j++){
-							if (!(i == 0 && j == 0)){
-								int indexi = getToroidal(y+i,d);
-								int indexj = getToroidal(x+j,d);
-								if (read_matrix[indexi][indexj] == 2)
-									sum += 1;
-							} 
-						}
-					}				
+			{
+				sum = 0;
+				for (i = -1; i <= 1; i++){
+					for (j = -1; j <= 1; j++){
+						if (!(i == 0 && j == 0)){
+							int indexi = getToroidal(y+i,d);
+							int indexj = getToroidal(x+j,d);
+							if (read_matrix[indexi][indexj] == 2)
+								sum += 1;
+						} 
+					}
+				}				
 			      
-				
 				if(sum>0){ 
 					float p = 0.8;
 					float prob = (-p+1.0)/7.0*sum + (8.0*p-1.0)/7.0;
-					std::binomial_distribution<int> distribution_BurnableToBurning(1,prob);
-					new_state_BurnableToBurning = distribution_BurnableToBurning(generator_BurnableToBurning);
-					write_matrix[y][x] = new_state_BurnableToBurning+1;
-					}
+					write_matrix[y][x] = rng.getBinNumber(p)+1;
+				}
 				else
 					write_matrix[y][x] =1;
 			}
@@ -93,7 +101,6 @@ void transiction_function(std::default_random_engine generator_BurnableToBurning
 				write_matrix[y][x] = 3;
 			}		
 			}
-	}
 	}
 }
 
@@ -171,8 +178,6 @@ void drawwithAllegro(){
 
 int main() {
 	srand(1);
-	std::default_random_engine generator_BurnableToBurning;
-	generator_BurnableToBurning.seed(1);
 	
 	initAllegro();
 	initForest();
@@ -180,20 +185,22 @@ int main() {
 	bool pressed_p_button=false;
 	int microsec = 100000;
 
-	while(!key[KEY_ESC]){
-		
-		if(key[KEY_P])
-			pressed_p_button=true;
+	#pragma omp parallel
+	{
+		ThreadSafeRNG rng;
+		while(!key[KEY_ESC]){
+			if(key[KEY_P])
+				pressed_p_button=true;
+				
+				if(key[KEY_R])
+					pressed_p_button=false;
+				
+				if(!pressed_p_button)
+					global_transiction_function(rng);
 
-		if(key[KEY_R])
-			pressed_p_button=false;
-
-		if(!pressed_p_button)
-			global_transiction_function(generator_BurnableToBurning);
-
-		drawwithAllegro();
+				drawwithAllegro();
+		}
 	}
-
 	return 0;
 }
 END_OF_MAIN()
