@@ -1,17 +1,17 @@
 // ./forest_omp_nogui OUTPUT_FILE_OMP.txt #steps Matrix_size(square)
-#include <stdlib.h>
-#include <unistd.h>
-#include <random>
+// C libraries
 #include <omp.h>
-//using namespace std;
-// #include <iostream>
 #include <stdio.h>
+// C++ libraries
+#include <random>
+#include <ctime>
 
 // I/O parameters used to index argv[]
 #define OUTPUT_PATH_ID 1
 #define STEPS_ID 2
 #define MATRIX_SIZE 3
 
+// Variable used in saveGrid2Dr
 #define STRLEN 256
 
 // Function to save last configuration
@@ -35,6 +35,19 @@ bool saveGrid2Dr(int *M, int d, char *path){
 	return true;
 }
 
+// Class for clearer syntax of random numbers
+class SerialRNG{
+    public:
+        SerialRNG(){
+            generator.seed(time(NULL));
+        }
+        int getBinNumber(double p){
+            std::binomial_distribution<int> distribution(1,p);
+            return distribution(generator);
+        }
+    private:
+    std::default_random_engine generator;
+};
 
 // Assure Periodic Boundary Conditions
 int getToroidal(int i, int size){
@@ -49,7 +62,7 @@ int getToroidal(int i, int size){
 }
 
 // void transiction_function(int d, int *read_matrix, int *write_matrix, std:: default_random_engine generator_b2b){
-void transition_function(int d, int total_steps, int *read_matrix, int *write_matrix, int *seed_matrix){
+void transition_function(int d, int total_steps, int *read_matrix, int *write_matrix, SerialRNG rng){
 	int sum;
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {	
@@ -71,13 +84,8 @@ void transition_function(int d, int total_steps, int *read_matrix, int *write_ma
 				}
 
 				if (sum > 0){
-					// seed_matrix[y*d+x] = y+x +5;
-					std::default_random_engine generator_b2b;
-					generator_b2b.seed(seed_matrix[total_steps*x*y+y*d+x]);
-						 
 					float prob = 0.2/7.0*sum + 5.4/7.0;
-					std::binomial_distribution<int> dist_b2b(1,prob);
-					write_matrix[y*d+x] = dist_b2b(generator_b2b) + 1;
+					write_matrix[y*d+x] = rng.getBinNumber(prob) + 1;
 				}
 				else 
 					write_matrix[y*d+x] = 1;
@@ -103,14 +111,6 @@ void swap(int d, int *read_matrix, int *write_matrix){
 	}
 }
 
-
-void random_seed_matrix(int total_steps, int d, int *seed_array){
-	for (int i = 0; i < total_steps*d*d; i++){
-		seed_array[i] = rand()%100;	
-	}
-}
-
-
 // This function generates the forest (grid) and assigns each cell one of the two possible states: rock (not burnable) or tree (burnable)
 void initForest(int d, int *read_matrix, int *write_matrix){
 	for (int y = 0; y < d; ++y) {
@@ -121,17 +121,17 @@ void initForest(int d, int *read_matrix, int *write_matrix){
 		}
 	}
 // introduce a burning cell
-	read_matrix[250*d+250] = 2;
-	write_matrix[250*d+250] = 2;
+	int index_middle = d/2 * d + d/2;
+	read_matrix[index_middle] = 2;
+	write_matrix[index_middle] = 2;
 }
 
 
-
 int main(int argc, char **argv) {
-	// Starting seeds
-	printf("principi\n");
+	// Initializing seeds
 	srand(1);
-	printf("srandejat\n");
+	SerialRNG rng;
+	
 	// Memory allocation
 	int d = atoi(argv[MATRIX_SIZE]);
 	int size = d*d*sizeof(int);
@@ -145,21 +145,13 @@ int main(int argc, char **argv) {
 	int *write_matrix;
 	read_matrix = (int *)malloc(size);
 	write_matrix = (int *)malloc(size);
+	
 	// Fill read_matrix with initial conditions
 	initForest(d, read_matrix, write_matrix);
 
-	printf("Allocated readwrite\n");
-	// Generate seeds (one matrix for each timestep) 
-	int *seed_matrix;
-	seed_matrix = (int *)malloc(size*total_steps);
-	random_seed_matrix(total_steps, d, seed_matrix);
-	printf("Allocated seedmatrix\n");
-
-
 	printf("Starting simulation ...\n");
-	for (int timestep = 0; timestep < total_steps; timestep++){
-		
-		transition_function(d, total_steps, read_matrix, write_matrix, seed_matrix);
+	for (int timestep = 0; timestep < total_steps; timestep++){		
+		transition_function(d, total_steps, read_matrix, write_matrix, rng);
 		swap(d,read_matrix,write_matrix);
 	}
 
@@ -168,7 +160,6 @@ int main(int argc, char **argv) {
 
 	delete [] read_matrix;
 	delete [] write_matrix;
-	delete [] seed_matrix;
 	
 	return 0;
 }

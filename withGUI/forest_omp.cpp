@@ -1,43 +1,44 @@
+// C libraries
 #include <allegro.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <random>
 #include <omp.h>
-//using namespace std;
 
+// C++ libraries
+#include <random>
+#include <ctime>
+
+// Dimension of the grid
+const int d = 500;
+
+// Allegro parameters
 const int b_screen = 500;
 const int h_screen = 500;
-const int d = 500;
 int zoom=1;
 BITMAP* buffer;
-int step = 0;
 
-struct cell{
-	int i;
-	int j;
-};
-
-const int neighborhood_size=9;
-
-//STATES -------
-
-int read_matrix[d][d];   // Read  Matrix
-int write_matrix[d][d];  // Write Matrix
-
-//ALLEGRO COLOR -----
-
-//int green; //tree
-//int white; //not burnable
-//int yellow; // burnable
-//int orange; //burning	
-//int black; //burned
-
+// Allegro colors
 int grey; // Not burnable (rock) 
 int green; // burnable (tree)
 int orange; // burning
 int black; //burned
 int white;
 
+// Class for thread-safe random numbers
+class ThreadSafeRNG{
+public:
+	ThreadSafeRNG(){
+		// Each thread gets a seed
+		unsigned int seed = static_cast<unsigned int>(omp_get_thread_num() + time(NULL));
+		generator.seed(seed);
+	}
+	int getBinNumber(double p){
+		std::binomial_distribution<int> distribution(1,p);
+		return distribution(generator);
+	}
+private:
+	std::default_random_engine generator;
+};
+
+// Function for periodic boundary conditions
 int getToroidal(int i, int size){
 	if(i < 0){
 		return i+size;
@@ -49,62 +50,52 @@ int getToroidal(int i, int size){
 	return i;
 }
 
-class ThreadSafeRNG{
-public:
-	ThreadSafeRNG{
-		unsigned int seed = static_cast<unsigned int>(omp_get_thread_num());
-		generator.seed(seed);
-	}
-	int getBinNumber(double p){
-		std::binomial_distribution<int> distribution_(1,prob);
-		return distribution_BurnableToBurning(generator);
-	}
-private:
-	std::default_random_engine generator;
-};
 
-
-
-void transiction_function(threadSafeRNG rng){
-
+// Transition function for one timestep
+void transition_function(int read_matrix[d][d], int write_matrix[d][d], ThreadSafeRNG rng){
 	int sum;
-	#pragma omp for 
+	float p = 0.8;
+	#pragma omp for schedule(dynamic)
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {
-			if (read_matrix[y][x] == 0) //(not burnable)
-			{
-				write_matrix[y][x] = 0; // cell remains not burnable
-			}
-			else if (read_matrix[y][x] == 1) //burnable)
-			{
-				sum = 0;
-				for (i = -1; i <= 1; i++){
-					for (j = -1; j <= 1; j++){
-						if (!(i == 0 && j == 0)){
-							int indexi = getToroidal(y+i,d);
-							int indexj = getToroidal(x+j,d);
-							if (read_matrix[indexi][indexj] == 2)
-								sum += 1;
-						} 
-					}
-				}				
+			switch(read_matrix[y][x]){ 
+				case 0: //(not burnable)
+					write_matrix[y][x] = 0; // cell remains not burnable
+					break;
+				case 1: 
+					sum = 0;
+					for (int i = -1; i <= 1; i++){
+						for (int j = -1; j <= 1; j++){
+							if (!(i == 0 && j == 0)){
+								int indexi = getToroidal(y+i,d);
+								int indexj = getToroidal(x+j,d);
+								if (read_matrix[indexi][indexj] == 2)
+									sum += 1;
+							} 
+						}
+					}				
 			      
-				if(sum>0){ 
-					float p = 0.8;
-					float prob = (-p+1.0)/7.0*sum + (8.0*p-1.0)/7.0;
-					write_matrix[y][x] = rng.getBinNumber(p)+1;
-				}
-				else
-					write_matrix[y][x] =1;
-			}
-			else if (read_matrix[y][x] == 2) {
-				write_matrix[y][x] = 3;
+					if(sum>0){ 
+						float prob = (-p+1.0)/7.0*sum + (8.0*p-1.0)/7.0;
+						write_matrix[y][x] = rng.getBinNumber(p)+1;
+					}
+					else
+						write_matrix[y][x] =1;
+			
+					break;
+			
+				case 2:
+					write_matrix[y][x] = 3;
+					break;
+				// case 3:
+					// write_matrix[y][x] = 3;
+					// break;
 			}		
-			}
+		}
 	}
 }
 
-void swap(){
+void swap(int read_matrix[d][d], int write_matrix[d][d]){
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {
 			read_matrix[y][x] = write_matrix[y][x];
@@ -112,13 +103,8 @@ void swap(){
 	}
 }
 
-void global_transiction_function(std::default_random_engine generator_BurnableToBurning){
-	transiction_function(generator_BurnableToBurning);
-	swap();
-	step++;
-}
 
-void initForest()
+void initForest(int read_matrix[d][d], int write_matrix[d][d])
 {
 // This function generates the forest (grid) and assigns each cell one of the two possible states: rock (not burnable) or tree (burnable)
 	for (int y = 0; y < d; ++y) {
@@ -129,8 +115,8 @@ void initForest()
 		}
 	}
 // introduce a burning cell
-	read_matrix[250][250] = 2;
-	write_matrix[250][250] = 2;
+	read_matrix[d/2][d/2] = 2;
+	write_matrix[d/2][d/2] = 2;
 }
 
 // INIT ALLEGRO
@@ -149,7 +135,7 @@ void initAllegro(){
 }
 
 //DRAW
-void drawwithAllegro(){
+void drawwithAllegro(int read_matrix[d][d], int step){
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {
 			switch(read_matrix[y][x]){
@@ -178,10 +164,16 @@ void drawwithAllegro(){
 
 int main() {
 	srand(1);
+	// States matrix
+	int read_matrix[d][d];   // Read  Matrix
+	int write_matrix[d][d];  // Write Matrix
+	
+	int step = 0;
 	
 	initAllegro();
-	initForest();
-	drawwithAllegro();
+	initForest(read_matrix, write_matrix);
+	drawwithAllegro(read_matrix, step);
+	
 	bool pressed_p_button=false;
 	int microsec = 100000;
 
@@ -195,10 +187,14 @@ int main() {
 				if(key[KEY_R])
 					pressed_p_button=false;
 				
-				if(!pressed_p_button)
-					global_transiction_function(rng);
-
-				drawwithAllegro();
+				if(!pressed_p_button){
+					transition_function(read_matrix, write_matrix, rng);
+					swap(read_matrix, write_matrix);
+					step++;
+				
+					#pragma omp critical
+					drawwithAllegro(read_matrix, step);
+				}
 		}
 	}
 	return 0;
