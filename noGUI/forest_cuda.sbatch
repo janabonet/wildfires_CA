@@ -1,7 +1,6 @@
 #!/bin/sh
-#SBATCH --chdir=/scratch/nas/1/siri1010/wildfires_CA/
-#SBATCH --output=/scratch/nas/1/siri1010/wildfires_CA/sortida-%j.out
-#SBATCH --error=/scratch/nas/1/siri1010/wildfires_CA/error-%j.out
+#SBATCH --output=/sortida-%j.out
+#SBATCH --error=/error-%j.out
 #SBATCH --job-name="cuda"
 #SBATCH -A cuda
 #SBATCH -p cuda
