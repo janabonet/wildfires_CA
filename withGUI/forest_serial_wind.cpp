@@ -90,7 +90,7 @@ void transition_function(int read_matrix[d][d], int write_matrix[d][d], SerialRN
                                     if (!(i == 0 && j == 0)){
                                         indexi = getToroidal(y+i,d);
                                         indexj = getToroidal(x+j,d);
-                                        if (read_matrix[indexi][indexj] == 2)//si es detectava que hi ha un burning, sumem 1
+                                        if (read_matrix[indexi][indexj] == 2) // check if the neighbours are burning and count them
                                             sum += 1;
                                     } 
                                 }
@@ -105,6 +105,8 @@ void transition_function(int read_matrix[d][d], int write_matrix[d][d], SerialRN
                                 write_matrix[y][x] =1;
                         break;
                         case 1: //South wind
+
+                        // Define the indices of the relevant neighbours
                             indexi_middle = getToroidal(y,d);
                             indexj_middle = getToroidal(x+1,d);
                             indexi_right = getToroidal(y+1,d);

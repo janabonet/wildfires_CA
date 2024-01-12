@@ -23,17 +23,19 @@ int white;
 
 // Class for thread-safe random numbers
 class SerialRNG{
-public:
-	SerialRNG(){
-		// Different thread at each iteration
-		generator.seed(time(NULL));
-	}
-	int getBinNumber(double p){
-		std::binomial_distribution<int> distribution(1,p);
-		return distribution(generator);
-	}
-private:
-	std::default_random_engine generator;
+	public:
+		SerialRNG(){
+			// Different thread at each iteration
+			generator.seed(time(NULL));
+		}
+		int getBinNumber(double p){
+			// Function that returns a number from the binomial distribution
+			std::binomial_distribution<int> distribution(1,p);
+			return distribution(generator);
+		}
+	private:
+		// definition of a distributions generator
+		std::default_random_engine generator;
 };
 
 // Function for periodic boundary conditions
@@ -50,19 +52,20 @@ int getToroidal(int i, int size){
 
 // Transition function for one timestep
 void transition_function(int read_matrix[d][d], int write_matrix[d][d], SerialRNG rng){
-	int sum;
+	int sum; //counter of burning neighbours
 	float p = 0.8;
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {
 			switch(read_matrix[y][x]){ 
-				case 0: //(not burnable)
+				case 0: //not burnable
 					write_matrix[y][x] = 0; // cell remains not burnable
 					break;
-				case 1: 
+				case 1: // burnable
 					sum = 0;
 					for (int i = -1; i <= 1; i++){
 						for (int j = -1; j <= 1; j++){
 							if (!(i == 0 && j == 0)){
+								// Cheack if each of the 8 neighbour is burning and count them
 								int indexi = getToroidal(y+i,d);
 								int indexj = getToroidal(x+j,d);
 								if (read_matrix[indexi][indexj] == 2)
@@ -71,16 +74,19 @@ void transition_function(int read_matrix[d][d], int write_matrix[d][d], SerialRN
 						}
 					}				
 			      
-					if(sum>0){ 
+					if(sum>0){  // if more than 1 neighnour is burning, calculate the probability of transitioning 
+					//to burning state and obtain a number of the binomial distribution with such probability as a parameter
 						float prob = (-p+1.0)/7.0*sum + (8.0*p-1.0)/7.0;
-						write_matrix[y][x] = rng.getBinNumber(prob)+1;
+						write_matrix[y][x] = rng.getBinNumber(prob)+1;  
+						// if rng.getBinNUmner = 0, state = 1 (cell remains burnable)
+						// if rng.getBinNumber = 1, state = 2 (cell goes to burning state)
 					}
 					else
 						write_matrix[y][x] =1;
 			
 					break;
 			
-				case 2:
+				case 2: // burning cell --> burned in the next timestep
 					write_matrix[y][x] = 3;
 					break;
 			}		
@@ -88,10 +94,10 @@ void transition_function(int read_matrix[d][d], int write_matrix[d][d], SerialRN
 	}
 }
 
-// Copies write matrix to read matrix
+// Copies write matrix to read matrix (called every timestep)
 void swap(int read_matrix[d][d], int write_matrix[d][d]){
 	for (int y = 0; y < d; ++y) {
-		for (int x = 0; x < d; ++x) {
+		for (int x = 0; x < d; ++x) { 
 			read_matrix[y][x] = write_matrix[y][x];
 		}
 	}
@@ -108,7 +114,7 @@ void initForest(int read_matrix[d][d], int write_matrix[d][d])
 			write_matrix[y][x]=state;
 		}
 	}
-// introduce a burning cell
+// introduce a burning cell at the center of the grid
 	read_matrix[d/2][d/2] = 2;
 	write_matrix[d/2][d/2] = 2;
 }

@@ -54,7 +54,7 @@ int getToroidal(int i, int size){
 // Transition function for one timestep
 void transition_function(int read_matrix[d][d], int write_matrix[d][d], ThreadSafeRNG rng){
 	int sum;
-	float p = 0.8;
+	float p = 0.8; // minimum value so that the model evolvedd more than a few timesteps
 	#pragma omp for schedule(dynamic)
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {
@@ -63,7 +63,7 @@ void transition_function(int read_matrix[d][d], int write_matrix[d][d], ThreadSa
 					write_matrix[y][x] = 0; // cell remains not burnable
 					break;
 				case 1: 
-					sum = 0;
+					sum = 0; //counter of burning neighbours
 					for (int i = -1; i <= 1; i++){
 						for (int j = -1; j <= 1; j++){
 							if (!(i == 0 && j == 0)){
@@ -96,6 +96,7 @@ void transition_function(int read_matrix[d][d], int write_matrix[d][d], ThreadSa
 }
 
 void swap(int read_matrix[d][d], int write_matrix[d][d]){
+	#pragma omp for
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {
 			read_matrix[y][x] = write_matrix[y][x];
