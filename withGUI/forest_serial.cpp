@@ -49,7 +49,7 @@ int getToroidal(int i, int size){
 }
 
 // Transition function for one timestep
-	void transition_function(int read_matrix[d][d], int write_matrix[d][d], SerialRNG rng){
+void transition_function(int read_matrix[d][d], int write_matrix[d][d], SerialRNG rng){
 	int sum;
 	float p = 0.8;
 	for (int y = 0; y < d; ++y) {

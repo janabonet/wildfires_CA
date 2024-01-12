@@ -53,17 +53,17 @@ int getToroidal(int i, int size){
 // Funtion that defines transition behaviour if there is wind present (used in transition_function)
 void transition_with_wind(int x, int y, int indexi_left,int indexj_left, int indexi_right, int indexj_right, int indexi_middle, int indexj_middle,
                             int read_matrix[d][d], int write_matrix[d][d], SerialRNG changeState){
-    if (read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_right][indexj_right] == 2 && read_matrix[indexi_left][indexj_left] == 2)
-        write_matrix[y][x] = changeState.getBinNumber(0.95)+1;
+    if (read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_right][indexj_right] == 2 && read_matrix[indexi_left][indexj_left] == 2) //three relevant neighbours are burning
+        write_matrix[y][x] = changeState.getBinNumber(0.95)+1; //0.95
 
-    else if ((read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_right][indexj_right] == 2)||((read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_left][indexj_left] == 2)))
-        write_matrix[y][x] = changeState.getBinNumber(0.9)+1;                    
+    else if ((read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_right][indexj_right] == 2)||((read_matrix[indexi_middle][indexj_middle] == 2 && read_matrix[indexi_left][indexj_left] == 2))) //middle and one corner neighbours are burning
+        write_matrix[y][x] = changeState.getBinNumber(0.9)+1;     // 0.9               
 
-    else if (read_matrix[indexi_middle][indexj_middle] == 2)
-        write_matrix[y][x] = changeState.getBinNumber(0.7)+1; 
+    else if (read_matrix[indexi_middle][indexj_middle] == 2) //middle neighbour is burning
+        write_matrix[y][x] = changeState.getBinNumber(0.7)+1; // 0.7
 
-    else if ((read_matrix[indexi_left][indexj_left] == 2) ||(read_matrix[indexi_right][indexj_right] == 2))
-        write_matrix[y][x] = changeState.getBinNumber(0.65)+1; 
+    else if ((read_matrix[indexi_left][indexj_left] == 2) ||(read_matrix[indexi_right][indexj_right] == 2)) // one of the corner neighbours is burning
+        write_matrix[y][x] = changeState.getBinNumber(0.65)+1; //0.65
 
     else
         write_matrix[y][x] =1;

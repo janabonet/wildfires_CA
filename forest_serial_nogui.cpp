@@ -51,7 +51,6 @@ int getToroidal(int i, int size){
 // void transiction_function(int d, int *read_matrix, int *write_matrix, std:: default_random_engine generator_b2b){
 void transition_function(int d, int total_steps, int *read_matrix, int *write_matrix, int *seed_matrix){
 	int sum;
-	#pragma omp parallel for schedule(dynamic)
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {	
 		switch(read_matrix[y*d+x]){
