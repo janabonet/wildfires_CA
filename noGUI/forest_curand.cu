@@ -179,7 +179,7 @@ int main(int argc, char **argv) {
 	printf("Files: %d, columnes: %d\n",d,d);
 	printf("blocksize_x: %d, blocksize_y: %d\n",bs_x, bs_y);
 	printf("Number of blocks (x): %d, Number of blocks (y): %d \n",block_number.x, block_number.y);
-	printf("Number of steps: %d",total_steps);
+	printf("Number of steps: %d \n",total_steps);
 
 	// Declare rng at each thread and initialize different seed.
 	curandState *seedStates;
@@ -216,7 +216,7 @@ int main(int argc, char **argv) {
 	}
 
 	// Copy data from GPU to CPU
-	printf("Saving data...");
+	printf("Saving data...\n");
 	cudaMemcpy(read_matrix, d_read_matrix, size, cudaMemcpyDeviceToHost);
 	cudaMemcpy(write_matrix, d_write_matrix, size, cudaMemcpyDeviceToHost);
 
