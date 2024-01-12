@@ -3,6 +3,9 @@
 #include <omp.h>
 #include <stdio.h>
 
+#include <stdlib.h>
+#include <unistd.h>
+
 // C++ libraries
 #include <random>
 #include <ctime>
@@ -18,7 +21,7 @@ class ThreadSafeRNG{
 public:
 	ThreadSafeRNG(){
 		// Each thread gets a seed
-		unsigned int seed = static_cast<unsigned int>(omp_get_thread_num() + time(NULL));
+		unsigned int seed = static_cast<unsigned int>(omp_get_thread_num());// + time(NULL));
 		generator.seed(seed);
 	}
 	int getBinNumber(double p){
@@ -63,9 +66,9 @@ int getToroidal(int i, int size){
 	return i;
 }
 
-// void transiction_function(int d, int *read_matrix, int *write_matrix, std:: default_random_engine generator_b2b){
 void transition_function(int d, int total_steps, int *read_matrix, int *write_matrix, ThreadSafeRNG rng){
 	int sum;
+	float prob;
 	#pragma omp for schedule(dynamic)
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {	
@@ -87,7 +90,7 @@ void transition_function(int d, int total_steps, int *read_matrix, int *write_ma
 					}
 
 					if (sum > 0){						 
-						float prob = 0.2/7.0*sum + 5.4/7.0;
+						prob = 0.2/7.0*sum + 5.4/7.0;
 						write_matrix[y*d+x] = rng.getBinNumber(prob) + 1;
 					}
 					else 
@@ -105,6 +108,7 @@ void transition_function(int d, int total_steps, int *read_matrix, int *write_ma
 }
 
 void swap(int d, int *read_matrix, int *write_matrix){
+	#pragma omp for 
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {
 			read_matrix[y*d+x] = write_matrix[y*d+x];
@@ -159,9 +163,9 @@ int main(int argc, char **argv) {
 
 	printf("Starting simulation ...\n");
 	
+	ThreadSafeRNG rng;
 	#pragma omp parallel
 	{
-		ThreadSafeRNG rng;
 		for (int timestep = 0; timestep < total_steps; timestep++){	
 			transition_function(d, total_steps, read_matrix, write_matrix, rng);
 			swap(d,read_matrix,write_matrix);

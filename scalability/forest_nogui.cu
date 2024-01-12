@@ -146,6 +146,8 @@ int main(int argc, char **argv) {
 	int bs_x, bs_y;
 	bs_x = atoi(argv[BLOCK_SIZE_X]);
 	bs_y = atoi(argv[BLOCK_SIZE_Y]);
+	
+	printf("block size: %d", bs_x);
 
 	dim3 block_size(bs_x, bs_y, 1);
 	dim3 block_number(ceil((d)/(float)block_size.x), ceil((d)/(float)block_size.y),1);

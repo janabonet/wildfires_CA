@@ -1,3 +1,5 @@
+# Makefile to use only in the scalability.sbatch.
+
 SEQ_SRC=forest_ser_nogui.cpp
 OMP_SRC=forest_omp_nogui.cpp
 CUDA_SRC=forest_nogui.cu
@@ -13,7 +15,7 @@ omp:
 	g++ -fopenmp $(OMP_SRC) -o $(OMP_EXEC) -O3
 cuda:
 	nvcc -o $(CUDA_EXEC) $(CUDA_SRC) -O3
-clean:
+clean: 
 	rm $(SEQ_EXEC)
 	rm $(OMP_EXEC)
 	rm $(CUDA_EXEC)

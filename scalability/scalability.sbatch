@@ -18,17 +18,17 @@ SEQ_EXEC=forest_serial_nogui
 OMP_EXEC=forest_omp_nogui
 
 # Parameters
-if [ $# -eq 2 ]; then
+if [ $# -eq 3 ]; then
 	size=$1
 	steps=$2
 	np_NMAX=$3
 else
-	size=1000
-	steps=1000
-	np_NMAX=20
+	size=10000
+	steps=100
+	np_NMAX=40
 	echo Executing with default parameters
 fi
-np_NMIN=1
+np_NMIN=20
 N=3 # number of executions
 
 out=/tmp/out.$$
@@ -43,7 +43,6 @@ rm -rf $outputpath2 2> /dev/null
 echo Compiling
 make serial
 make omp
-make cuda
 
 # Sequential execution
 echo Executing $SEQ sequentially
@@ -120,5 +119,5 @@ while (test $PARS -le $np_NMAX)
 done
 
 
-mv $outputpath ./resultats/elapsed-$OMP_EXEC-$size.txt
-mv $outputpath2 ./resultats/speedup-$OMP_EXEC-$size.txt
+mv $outputpath ./resultats/elapsed-$OMP_EXEC-$size-$PARS.txt
+mv $outputpath2 ./resultats/speedup-$OMP_EXEC-$size-$PARS.txt

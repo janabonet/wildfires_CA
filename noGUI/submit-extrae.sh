@@ -38,11 +38,13 @@ fi
 
 
 # Compile file
+echo Compiling file
 make $1
 
 export OMP_NUM_THREADS=$nprocs
 export KMP_AFFINITY=scatter
 
+echo abans de correrho
 export LD_PRELOAD=${EXTRAE_HOME}/lib/libomptrace.so
 ./$1 temp_output.txt $steps $size
 unset LD_PRELOAD

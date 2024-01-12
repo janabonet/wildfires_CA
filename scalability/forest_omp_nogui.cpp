@@ -47,10 +47,9 @@ int getToroidal(int i, int size){
 	return i;
 }
 
-// void transiction_function(int d, int *read_matrix, int *write_matrix, std:: default_random_engine generator_b2b){
 void transition_function(int d, int total_steps, int *read_matrix, int *write_matrix){
 	int sum;
-	#pragma omp parallel for schedule(dynamic)
+	#pragma omp parallel for //schedule(dynamic)
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {	
 		switch(read_matrix[y*d+x]){
@@ -90,6 +89,7 @@ void transition_function(int d, int total_steps, int *read_matrix, int *write_ma
 }
 
 void swap(int d, int *read_matrix, int *write_matrix){
+	#pragma omp parallel for
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {
 			read_matrix[y*d+x] = write_matrix[y*d+x];
@@ -138,11 +138,13 @@ int main(int argc, char **argv) {
 	
 	// Fill read_matrix with initial conditions
 	initForest(d, read_matrix, write_matrix);
-
+	//#pragma omp parallel
+	//{
 	for (int timestep = 0; timestep < total_steps; timestep++){
 		transition_function(d, total_steps, read_matrix, write_matrix);
 		swap(d,read_matrix,write_matrix);
 	}
+	//}
 	delete [] read_matrix;
 	delete [] write_matrix;
 	
