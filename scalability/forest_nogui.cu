@@ -1,13 +1,8 @@
+// Code for simulation of a wildfire parallelized with cuda.
+// Note: this code is only for performance measurements and does not use randomness.
+// Please read the code in noGUI/ to find the random version with comments.
 #include <stdlib.h>
-#include <unistd.h>
-#include <random>
-#include <malloc.h>
 #include <cuda.h>
-	#include <time.h>
-//using namespace std;
-
-//maybe
-#include <iostream>
 #include <stdio.h>
 
 // I/O parameters used to index argv[]
@@ -20,7 +15,6 @@
 
 
 // Function to save the last iteration matrix
-
 bool saveGrid2Dr(int *M, int d, char *path){
 	FILE *f;
 	f = fopen(path,"w");
@@ -125,11 +119,7 @@ void initForest(int d, int *read_matrix, int *write_matrix){
 	write_matrix[burned_index*d+burned_index] = 2;
 }
 
-
-//---------------------------------------------------------//
-//---------------		MAIN FUNCTION ---------------------//
-//---------------------------------------------------------//
-
+// Main function
 int main(int argc, char **argv) {
 	srand(1);
 
@@ -147,8 +137,6 @@ int main(int argc, char **argv) {
 	bs_x = atoi(argv[BLOCK_SIZE_X]);
 	bs_y = atoi(argv[BLOCK_SIZE_Y]);
 	
-	printf("block size: %d", bs_x);
-
 	dim3 block_size(bs_x, bs_y, 1);
 	dim3 block_number(ceil((d)/(float)block_size.x), ceil((d)/(float)block_size.y),1);
 

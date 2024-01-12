@@ -1,19 +1,24 @@
-// ./forest_omp_nogui OUTPUT_FILE_OMP.txt #steps Matrix_size(square)
+// Code for a simulation of a wildfire parallelized with OMP.
+// Compile with "make omp", execute with "make run_omp_nogui"
+// Results are in OUTPUT.txt
+
 // C libraries
 #include <omp.h>
-#include <stdio.h>
-
 #include <stdlib.h>
-#include <unistd.h>
+#include <stdio.h>
 
 // C++ libraries
 #include <random>
 #include <ctime>
 // I/O parameters used to index argv[]
+//Name of output file
 #define OUTPUT_PATH_ID 1
+// Number of steps in simulation
 #define STEPS_ID 2
+// Size of the grid
 #define MATRIX_SIZE 3
 
+// Variable used in saveGrid2Dr
 #define STRLEN 256
 
 // Class for thread-safe random numbers
@@ -21,7 +26,7 @@ class ThreadSafeRNG{
 public:
 	ThreadSafeRNG(){
 		// Each thread gets a seed
-		unsigned int seed = static_cast<unsigned int>(omp_get_thread_num());// + time(NULL));
+		unsigned int seed = static_cast<unsigned int>(omp_get_thread_num()+ time(NULL));
 		generator.seed(seed);
 	}
 	int getBinNumber(double p){
@@ -53,8 +58,7 @@ bool saveGrid2Dr(int *M, int d, char *path){
 	return true;
 }
 
-
-// Assure Periodic Boundary Conditions
+// Function for Periodic Boundary Conditions
 int getToroidal(int i, int size){
 	if(i < 0){
 		return i+size;
@@ -66,18 +70,21 @@ int getToroidal(int i, int size){
 	return i;
 }
 
+// Principal function. Applies transition function to grid
 void transition_function(int d, int total_steps, int *read_matrix, int *write_matrix, ThreadSafeRNG rng){
 	int sum;
-	float prob;
 	#pragma omp for schedule(dynamic)
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {	
 			switch(read_matrix[y*d+x]){
+				// Cell is not burnable
 				case 0: 
 					write_matrix[y*d+x] = 0; 
 				break;
+				//Cell is burnable
 				case 1:
 					sum = 0;
+					// Count burning neighbours (with PBC)
 					for (int i = -1; i <= 1; i++){
 						for (int j = -1; j <= 1; j++){
 							if (!(i == 0 && j == 0)){
@@ -88,17 +95,20 @@ void transition_function(int d, int total_steps, int *read_matrix, int *write_ma
 							}
 						}
 					}
-
+					// It has one burning neighbour, pass or not to burning
 					if (sum > 0){						 
-						prob = 0.2/7.0*sum + 5.4/7.0;
+						float prob = 0.2/7.0*sum + 5.4/7.0;
 						write_matrix[y*d+x] = rng.getBinNumber(prob) + 1;
 					}
+					// No burning neighbours
 					else 
 						write_matrix[y*d+x] = 1;
-				break;				
+				break;	
+				// Cell is burning 			
 				case 2:
 					write_matrix[y*d+x] = 3;
 				break;
+				// Cell is burnt
 				case 3:
 					write_matrix[y*d+x] = 3;
 				break;
@@ -107,6 +117,7 @@ void transition_function(int d, int total_steps, int *read_matrix, int *write_ma
 	}
 }
 
+// Function to copy data from write_matrix to read_matrix
 void swap(int d, int *read_matrix, int *write_matrix){
 	#pragma omp for 
 	for (int y = 0; y < d; ++y) {
@@ -116,15 +127,12 @@ void swap(int d, int *read_matrix, int *write_matrix){
 	}
 }
 
-
-void random_seed_matrix(int total_steps, int d, int *seed_array){
-	for (int i = 0; i < total_steps*d*d; i++){
-		seed_array[i] = rand()%100;	
-	}
-}
-
-
-// This function generates the forest (grid) and assigns each cell one of the two possible states: rock (not burnable) or tree (burnable)
+/*
+Function to generate initial condition. It assigns the state 
+"not burnable" (0) to a cell to simulate a rock and state 
+"burnable" (1) to a cell to simulate a tree.
+We introduce a burning cell in the middle of the grid
+*/
 void initForest(int d, int *read_matrix, int *write_matrix){
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {
@@ -133,9 +141,10 @@ void initForest(int d, int *read_matrix, int *write_matrix){
 			write_matrix[y*d+x]=state;
 		}
 	}
-// introduce a burning cell
-	read_matrix[250*d+250] = 2;
-	write_matrix[250*d+250] = 2;
+	// Introduce a burning cell
+	int index_middle = d/2 * d + d/2;
+	read_matrix[index_middle] = 2;
+	write_matrix[index_middle] = 2;
 }
 
 
@@ -163,9 +172,10 @@ int main(int argc, char **argv) {
 
 	printf("Starting simulation ...\n");
 	
-	ThreadSafeRNG rng;
 	#pragma omp parallel
 	{
+		// Start rng for each thread with a different seed
+		ThreadSafeRNG rng;
 		for (int timestep = 0; timestep < total_steps; timestep++){	
 			transition_function(d, total_steps, read_matrix, write_matrix, rng);
 			swap(d,read_matrix,write_matrix);
@@ -174,6 +184,7 @@ int main(int argc, char **argv) {
 	printf("Saving data to file...\n");
 	saveGrid2Dr(write_matrix, d, argv[OUTPUT_PATH_ID]);
 
+	// Memory freeing
 	delete [] read_matrix;
 	delete [] write_matrix;	
 	return 0;

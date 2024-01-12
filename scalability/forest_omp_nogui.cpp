@@ -1,10 +1,8 @@
-// ./forest_omp_nogui OUTPUT_FILE_OMP.txt #steps Matrix_size(square)
+// Code for simulation of a wildfire parallelized with omp.
+// Note: this code is only for performance measurements and does not use randomness.
+// Please read the code in noGUI/ to find the random version with comments.
 #include <stdlib.h>
-#include <unistd.h>
-#include <random>
 #include <omp.h>
-//using namespace std;
-// #include <iostream>
 #include <stdio.h>
 
 // I/O parameters used to index argv[]
@@ -49,7 +47,7 @@ int getToroidal(int i, int size){
 
 void transition_function(int d, int total_steps, int *read_matrix, int *write_matrix){
 	int sum;
-	#pragma omp parallel for //schedule(dynamic)
+	#pragma omp for schedule(dynamic)
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {	
 		switch(read_matrix[y*d+x]){
@@ -89,7 +87,7 @@ void transition_function(int d, int total_steps, int *read_matrix, int *write_ma
 }
 
 void swap(int d, int *read_matrix, int *write_matrix){
-	#pragma omp parallel for
+	#pragma omp for
 	for (int y = 0; y < d; ++y) {
 		for (int x = 0; x < d; ++x) {
 			read_matrix[y*d+x] = write_matrix[y*d+x];
@@ -121,7 +119,6 @@ void initForest(int d, int *read_matrix, int *write_matrix){
 }
 
 
-
 int main(int argc, char **argv) {
 	// Starting seeds
 	srand(1);
@@ -138,13 +135,13 @@ int main(int argc, char **argv) {
 	
 	// Fill read_matrix with initial conditions
 	initForest(d, read_matrix, write_matrix);
-	//#pragma omp parallel
-	//{
-	for (int timestep = 0; timestep < total_steps; timestep++){
-		transition_function(d, total_steps, read_matrix, write_matrix);
-		swap(d,read_matrix,write_matrix);
+	#pragma omp parallel
+	{
+		for (int timestep = 0; timestep < total_steps; timestep++){
+			transition_function(d, total_steps, read_matrix, write_matrix);
+			swap(d,read_matrix,write_matrix);
+		}
 	}
-	//}
 	delete [] read_matrix;
 	delete [] write_matrix;
 	

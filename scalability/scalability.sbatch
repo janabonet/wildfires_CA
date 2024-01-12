@@ -3,6 +3,11 @@
 #SBATCH --output=/scratch/nas/1/siri1010/wildfires_CA/scalability/sortida-strong-%j.out
 #SBATCH --error=/scratch/nas/1/siri1010/wildfires_CA/scalability/error-strong-%j.out
 
+# Script to measure the execution time and speedup of the OMP code
+# It essentially runs the code with a different number of threads,
+# measures the elapsed time with the /usr/bin/time utility and
+# outputs the result in a .txt file. 
+
 # Description of program usage
 USAGE="\n Usage: sbatch scalability.sbatch [options] \n
 		options		-> size: Size of the matrix (default 1000) \n
@@ -10,7 +15,7 @@ USAGE="\n Usage: sbatch scalability.sbatch [options] \n
 					-> np_NMAX: Maximum number of OMP threads (default 20)\n"
 
 
-# file names
+# File names
 SEQ_SRC=forest_ser_nogui.cpp
 OMP_SRC=forest_omp_nogui.cpp
 # Executable names
@@ -25,10 +30,10 @@ if [ $# -eq 3 ]; then
 else
 	size=10000
 	steps=100
-	np_NMAX=40
+	np_NMAX=20
 	echo Executing with default parameters
 fi
-np_NMIN=20
+np_NMIN=1
 N=3 # number of executions
 
 out=/tmp/out.$$
@@ -104,12 +109,12 @@ while (test $PARS -le $np_NMAX)
 		echo
 		i=0
 
-		#output el num threads i elapsed time
+		# Output num threads & elapsed time
 		echo -n $PARS >> $outputpath
 		echo -n "   " >> $outputpath
 		echo $min	  >> $outputpath
 
-		#output numthreads i speedup 
+		# Output numthreads & speedup 
 		echo -n $PARS >> $outputpath2
 		echo -n "   " >> $outputpath2
 		echo $result  >> $outputpath2
@@ -118,6 +123,6 @@ while (test $PARS -le $np_NMAX)
 		PARS=`expr $PARS + 1`
 done
 
-
+#Save results to file 
 mv $outputpath ./resultats/elapsed-$OMP_EXEC-$size-$PARS.txt
 mv $outputpath2 ./resultats/speedup-$OMP_EXEC-$size-$PARS.txt

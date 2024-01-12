@@ -58,7 +58,7 @@ run_omp_nogui:
 	OMP_NUM_THREADS=8 ./$(EXEC_OMP_NOGUI) OUTPUT_OMP.txt 1000 1000 
 
 run_cuda:
-	sbatch noGUI/forest_curand.sbatch OUTPUT_CUDA.txt 1000 10 10 1000
+	sbatch noGUI/forest_cuda.sbatch OUTPUT_CUDA.txt 1000 10 10 1000
 
 clean: 
-	find . -type f -executable -delete
+	find . .maxdepth 1 -type f -executable -delete

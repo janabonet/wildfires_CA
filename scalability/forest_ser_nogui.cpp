@@ -1,10 +1,8 @@
-// ./forest_omp_nogui OUTPUT_FILE_OMP.txt #steps Matrix_size(square)
+// Code for simulation of a wildfire with C/C++.
+// Note: this code is only for performance measurements and does not use randomness.
+// Please read the code in noGUI/ to find the random version with comments.
+
 #include <stdlib.h>
-#include <unistd.h>
-#include <random>
-#include <omp.h>
-//using namespace std;
-// #include <iostream>
 #include <stdio.h>
 
 // I/O parameters used to index argv[]

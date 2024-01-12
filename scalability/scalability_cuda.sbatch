@@ -8,8 +8,11 @@
 #SBATCH -p cuda
 #SBATCH --gres=gpu:1
 
+# Script to measure the execution time and speedup of the CUDA code
+# It essentially runs the code with a different blocksize, measures
+# the elapsed time with the /usr/bin/time utility and outputs the 
+# result in a .txt file. 
 
-echo "CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES"
 
 # Description of program usage
 USAGE="\n Usage: sbatch scalability.sbatch [options] \n
@@ -18,7 +21,7 @@ USAGE="\n Usage: sbatch scalability.sbatch [options] \n
 					-> bs_NMAX: Maximum number of block size (default 100)\n"
 
 
-# file names
+# File names
 SEQ_SRC=forest_ser_nogui.cpp
 CUDA_SRC=forest_curand.cu
 # Executable names
@@ -33,11 +36,11 @@ if [ $# -eq 3 ]; then
 else
 	size=1000
 	steps=1000
-	bs_NMAX=35
+	bs_NMAX=32
 	echo Executing with default parameters
 fi
 bs_NMIN=1
-N=1 # number of executions
+N=3 # number of executions
 
 out=/tmp/out.$$
 

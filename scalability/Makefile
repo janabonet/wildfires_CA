@@ -1,4 +1,4 @@
-# Makefile to use only in the scalability.sbatch.
+# Makefile to use only in the scalability.sbatch script.
 
 SEQ_SRC=forest_ser_nogui.cpp
 OMP_SRC=forest_omp_nogui.cpp

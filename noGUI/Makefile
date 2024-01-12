@@ -1,6 +1,5 @@
 #Makefile to use only fore the trace script. To compile normally, use the Makefile in ../
 
-
 SEQ_SRC=forest_serial_nogui.cpp
 OMP_SRC=forest_omp_nogui.cpp
 CUDA_SRC=forest_curand.cu
@@ -15,7 +14,6 @@ forest_serial_nogui:
 forest_omp_nogui:
 	g++ -fopenmp $(OMP_SRC) -o $(OMP_EXEC) -O3
 forest_cuda_nogui:
-	#nvcc -o $(EXEC_CUDA) $(SRC_CUDA) -O3
 	nvcc -o $(CUDA_EXEC) $(CUDA_SRC) -O3
 
 clean:
